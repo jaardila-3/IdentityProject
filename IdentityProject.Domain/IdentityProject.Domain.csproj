@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\IdentityProject.Domain\IdentityProject.Domain.csproj" />
-  </ItemGroup>
-
 </Project>

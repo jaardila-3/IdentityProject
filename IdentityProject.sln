@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityProject.Web", "Iden
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityProject.DataAccess", "IdentityProject.DataAccess\IdentityProject.DataAccess.csproj", "{4183929D-6CE4-4D12-8503-9B7B60B6885C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityProject.Domain", "IdentityProject.Domain\IdentityProject.Domain.csproj", "{235B099D-9409-4F72-AB50-9926D89DBEBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{4183929D-6CE4-4D12-8503-9B7B60B6885C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4183929D-6CE4-4D12-8503-9B7B60B6885C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4183929D-6CE4-4D12-8503-9B7B60B6885C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{235B099D-9409-4F72-AB50-9926D89DBEBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{235B099D-9409-4F72-AB50-9926D89DBEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{235B099D-9409-4F72-AB50-9926D89DBEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{235B099D-9409-4F72-AB50-9926D89DBEBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
