@@ -1,5 +1,3 @@
-using System.Net.Mime;
-using System;
 using IdentityProject.DataAccess.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;

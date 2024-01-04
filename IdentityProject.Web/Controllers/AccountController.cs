@@ -18,7 +18,7 @@ namespace IdentityProject.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Register()
+        public IActionResult Register()
         {
             RegisterViewModel model = new();
             return View(model);
