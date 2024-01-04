@@ -1,0 +1,116 @@
+@model RegisterViewModel
+
+@{
+    ViewData["Title"] = "Registro de usuario";
+}
+
+<h1>Registro de usuario</h1>
+<form asp-controller="Account" asp-action="Register" method="post" role="form">
+    <div class="text-danger" asp-validation-summary="All"></div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Name"></label>
+        <div class="col-md-10">
+            <input asp-for="Name" class="form-control">
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Email"></label>
+        <div class="col-md-10">
+            <input asp-for="Email" class="form-control">
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="UserName"></label>
+        <div class="col-md-10">
+            <input asp-for="UserName" class="form-control">
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Url"></label>
+        <div class="col-md-10">
+            <input asp-for="Url" class="form-control">
+            <span asp-validation-for="Url" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="CountryCode"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="CountryCode" class="form-control">
+            <span asp-validation-for="CountryCode" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="PhoneNumber"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="PhoneNumber" class="form-control">
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Country"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="Country" class="form-control">
+            <span asp-validation-for="Country" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="City"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="City" class="form-control">
+            <span asp-validation-for="City" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Address"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="Address" class="form-control">
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Birthdate"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="Birthdate" class="form-control">
+            <span asp-validation-for="Birthdate" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="Password"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="Password" class="form-control">
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-md-2" asp-for="ConfirmPassword"></label>
+        <div class="col-md-10">
+            <input type="text" asp-for="ConfirmPassword" class="form-control">
+            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-10">
+            <button type="submit" class="btn btn-success">Registrarse</button>
+        </div>
+    </div>
+</form>
+
+@section Scripts{
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
