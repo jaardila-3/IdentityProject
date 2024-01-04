@@ -20,3 +20,10 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+input#datepicker {
+  background-image: url('../images/X-office-calendar.svg');
+  background-position: right center;
+  background-repeat: no-repeat;
+  padding-right: 18px;
+}
