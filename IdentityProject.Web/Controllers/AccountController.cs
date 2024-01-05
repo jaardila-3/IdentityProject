@@ -40,7 +40,8 @@ namespace IdentityProject.Web.Controllers
                     CountryCode = model.CountryCode,
                     City = model.City,
                     Url = model.Url,
-                    PhoneNumber = model.PhoneNumber
+                    PhoneNumber = model.PhoneNumber,
+                    State = true
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
@@ -55,6 +56,46 @@ namespace IdentityProject.Web.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult Login(string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (ModelState.IsValid)
+            {
+                var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+
+                if (result.Succeeded)
+                {
+                    //return RedirectToAction(nameof(HomeController.Index), "Home");
+                    return Redirect(returnUrl ?? "/Home/Index");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Acceso inválido.");
+                    return View(model);
+                }
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
         private void ValidateErrors(IdentityResult result)
