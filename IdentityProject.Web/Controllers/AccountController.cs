@@ -73,12 +73,16 @@ namespace IdentityProject.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
 
                 if (result.Succeeded)
                 {
                     //return RedirectToAction(nameof(HomeController.Index), "Home");
-                    return Redirect(returnUrl ?? "/Home/Index");
+                    return LocalRedirect(returnUrl ?? Url.Content("~/"));
+                }
+                else if (result.IsLockedOut)
+                {
+                    return View("AccountLocked");
                 }
                 else
                 {
@@ -96,6 +100,12 @@ namespace IdentityProject.Web.Controllers
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction(nameof(HomeController.Index), "Home");
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
         }
 
         private void ValidateErrors(IdentityResult result)
