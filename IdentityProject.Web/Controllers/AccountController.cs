@@ -21,7 +21,7 @@ namespace IdentityProject.Web.Controllers
             _emailService = emailService;
         }
 
-        #region Register and Login
+        #region Register
         [HttpGet]
         public IActionResult Register()
         {
@@ -54,6 +54,22 @@ namespace IdentityProject.Web.Controllers
 
                 if (result.Succeeded)
                 {
+                    #region Implementation email confirmation in registration
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                    var subject = "Confirmar su cuenta de IdentityProject";
+                    var bodyHtml = @$"<p>Hola,</p>
+                    <p>Gracias por registrarte en IdentityProject. Estamos encantados de tenerte como usuario.</p>
+                    <p>Para completar tu registro y acceder a todas las funcionalidades de la aplicación, solo tienes que hacer clic en el siguiente enlace:</p>
+                    <p><a href='{callbackUrl}'>Confirmar cuenta</a></p>
+                    <p>Este enlace es válido por 24 horas. Si no lo usas dentro de ese plazo, deberás registrarte de nuevo.</p> 
+                    <p>Si tienes alguna duda o problema, puedes contactarnos en (email de soporte).</p>
+                    <p>¡Esperamos que disfrutes de IdentityProject!</p>
+                    <p>Saludos,</p>
+                    <p>El equipo de IdentityProject</p>";
+                    await _emailService.SendEmailAsync(model.Email, subject, bodyHtml);
+                    #endregion
+
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToAction(nameof(HomeController.Index), "Home");
                 }
@@ -64,6 +80,26 @@ namespace IdentityProject.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string userId, string code)
+        {
+            if (userId == null || code == null)
+                RedirectToAction(nameof(Error));
+
+            var user = await _userManager.FindByIdAsync(userId!);
+            if (user == null)
+                RedirectToAction(nameof(Error));
+
+            var result = await _userManager.ConfirmEmailAsync(user!, code!);
+            if (!result.Succeeded)
+                RedirectToAction(nameof(Error));
+
+            return View(nameof(ConfirmEmail));
+        }
+        #endregion
+
+        #region Login
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -129,12 +165,12 @@ namespace IdentityProject.Web.Controllers
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var returnUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
 
                 var subject = "Recuperar contraseña - IdentityProject";
                 var bodyHtml = @$"<p>Estimado usuario,</p>
                 <p>Hemos recibido una solicitud para restablecer la contraseña de su cuenta en IdentityProject. Si usted hizo esta solicitud, puede seguir el siguiente enlace para crear una nueva contraseña:</p>
-                <p><a href='{returnUrl}'>Restablecer contraseña</a></p>
+                <p><a href='{callbackUrl}'>Restablecer contraseña</a></p>
                 <p>Este enlace es válido por 24 horas. Si no lo usa dentro de ese plazo, deberá solicitar otro cambio de contraseña.</p>
                 <p>Si usted no hizo esta solicitud, puede ignorar este correo. Su contraseña actual no se verá afectada.</p>
                 <p>Gracias por usar IdentityProject.</p>
@@ -156,6 +192,7 @@ namespace IdentityProject.Web.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult ResetPassword(string? code = null)
         {
             return code == null ? RedirectToAction(nameof(Error)) : View();
