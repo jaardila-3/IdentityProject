@@ -29,6 +29,8 @@ builder.Services.Configure<IdentityOptions>(options =>
     //lockout login
     options.Lockout.MaxFailedAccessAttempts = 3;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
+    //options user
+    options.User.RequireUniqueEmail = true;
 });
 
 //add IoC
