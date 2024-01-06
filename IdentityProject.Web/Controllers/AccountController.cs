@@ -1,7 +1,9 @@
 using IdentityProject.Domain.Entities;
 using IdentityProject.Web.Models;
+using IdentityProject.Business.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IdentityProject.Web.Controllers
 {
@@ -9,11 +11,13 @@ namespace IdentityProject.Web.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly IEmailService _emailService;
 
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -104,6 +108,35 @@ namespace IdentityProject.Web.Controllers
 
         [HttpGet]
         public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return RedirectToAction("ForgotPasswordConfirmation");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var returnUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+
+                await _emailService.SendEmailAsync(model.Email, "Recuperar contraseña - IdentityProject", $"Por favor recupere su contraseña dando click aquí: <a href='{returnUrl}'>enlace recuperar contraseña</a>");
+
+                return RedirectToAction("ForgotPasswordConfirmation");
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPasswordConfirmation()
         {
             return View();
         }

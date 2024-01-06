@@ -1,6 +1,10 @@
 using IdentityProject.DataAccess.Persistence;
+using IdentityProject.Business.Services;
+using IdentityProject.Business.Interfaces.Services;
+using IdentityProject.Services.SMTP.MailJet;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 //add identity service
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 //configuration options for identity
 builder.Services.Configure<IdentityOptions>(options =>
@@ -26,6 +30,10 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Lockout.MaxFailedAccessAttempts = 3;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
 });
+
+//add ioc
+builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
