@@ -1,0 +1,46 @@
+@model TwoFactorAuthenticationViewModel
+@{
+    ViewData["Title"] = "Activar autenticación";
+}
+
+<div class="container">
+    <h2 class="text-center mb-4">Activar autenticación de dos factores</h2>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <form method="post" asp-controller="Account" asp-action="ActivateTwoFactorAuthentication">
+                <div asp-validation-summary="All" class="text-danger"></div>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Token" />
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p class="card-text">
+                            Ingrese el siguiente código en su aplicación de autenticación para completar la activación
+                            de la autenticación de dos factores:
+                        </p>
+                        <div class="text-center mb-3">
+                            <h5><code>@Model.Token</code></h5>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Code" class="form-label">Código de autenticador:</label>
+                            <input asp-for="Code" class="form-control"
+                                placeholder="Escribe aquí el código de tu autenticador">
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <button type="submit" class="btn btn-primary">Enviar <i
+                                class="bi bi-arrow-right-circle-fill"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,8 +1,32 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Página principal";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="card-title text-center">Bienvenido</h2>
+
+                    @if (User.Identity!.IsAuthenticated)
+                    {
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <p class="text-center">
+                                    ¿Desea configurar la autenticación de dos factores?
+                                </p>
+                                <div class="text-center">
+                                    <a asp-controller="Account" asp-action="ActivateTwoFactorAuthentication"
+                                        class="btn btn-primary">
+                                        Configurar <i class="bi bi-arrow-right-circle-fill"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
