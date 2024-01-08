@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
+using System.Text.Encodings.Web;
 
 namespace IdentityProject.Web.Controllers
 {
@@ -13,12 +14,14 @@ namespace IdentityProject.Web.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly IEmailService _emailService;
+        private readonly UrlEncoder _urlEncoder;
 
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IEmailService emailService)
+        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IEmailService emailService, UrlEncoder urlEncoder)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailService = emailService;
+            _urlEncoder = urlEncoder;
         }
 
         #region Register
@@ -260,7 +263,12 @@ namespace IdentityProject.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             await _userManager.ResetAuthenticatorKeyAsync(user!);
             var token = await _userManager.GetAuthenticatorKeyAsync(user!);
-            var model = new TwoFactorAuthenticationViewModel() { Token = token! };
+
+            // Create QR code
+            string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
+            string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(user!.Email!), token);
+
+            var model = new TwoFactorAuthenticationViewModel() { Token = token!, QrCodeUri = authenticatorUrl };
             return View(model);
         }
 
@@ -271,7 +279,7 @@ namespace IdentityProject.Web.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.GetUserAsync(User);
-                var Succeeded = await _userManager.VerifyTwoFactorTokenAsync(user!, _userManager.Options.Tokens.AuthenticatorTokenProvider, model.Code);
+                var Succeeded = await _userManager.VerifyTwoFactorTokenAsync(user!, _userManager.Options.Tokens.AuthenticatorTokenProvider, model.Code!);
                 if (Succeeded)
                 {
                     await _userManager.SetTwoFactorEnabledAsync(user!, true);
@@ -331,6 +339,21 @@ namespace IdentityProject.Web.Controllers
                 ModelState.AddModelError(string.Empty, "El código de verificación no es válido o ha expirado.");
                 return View(model);
             }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> DisableTwoFactorAuthentication()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Error));
+            }
+            await _userManager.ResetAuthenticatorKeyAsync(user);
+            bool enabled = false;
+            await _userManager.SetTwoFactorEnabledAsync(user, enabled);
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
         #endregion
     }

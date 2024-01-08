@@ -11,19 +11,32 @@
 
                     @if (User.Identity!.IsAuthenticated)
                     {
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <p class="text-center">
-                                    ¿Desea configurar la autenticación de dos factores?
-                                </p>
-                                <div class="text-center">
-                                    <a asp-controller="Account" asp-action="ActivateTwoFactorAuthentication"
-                                        class="btn btn-primary">
-                                        Configurar <i class="bi bi-arrow-right-circle-fill"></i>
-                                    </a>
+                        var isTwoFactorAuthenticationActive = ViewData["IsTwoFactorAuthenticationActive"];
+                        if (isTwoFactorAuthenticationActive != null && isTwoFactorAuthenticationActive.ToString()!.ToLower()
+                        == "true")
+                        {
+                            <div class="d-flex justify-content-center align-items-center">
+                                <a asp-controller="Account" asp-action="DisableTwoFactorAuthentication" class="btn btn-danger">
+                                Desactivar la autenticación de dos factores
+                            </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <p class="text-center">
+                                        ¿Desea configurar la autenticación de dos factores?
+                                    </p>
+                                    <div class="text-center">
+                                        <a asp-controller="Account" asp-action="ActivateTwoFactorAuthentication"
+                                            class="btn btn-primary">
+                                            Configurar <i class="bi bi-arrow-right-circle-fill"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        }
                     }
                 </div>
             </div>

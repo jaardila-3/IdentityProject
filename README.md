@@ -29,3 +29,7 @@ In this project, I created a new application using the technology of **ASP.NET I
 
 - dotnet ef migrations add <name-new-migration>
 - dotnet ef database update
+
+## Fonts for QR code
+- https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
+- https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
