@@ -9,20 +9,12 @@ using System.Text.Encodings.Web;
 
 namespace IdentityProject.Web.Controllers
 {
-    public class AccountController : Controller
+    public class AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly IEmailService _emailService;
-        private readonly UrlEncoder _urlEncoder;
-
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IEmailService emailService, UrlEncoder urlEncoder)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _emailService = emailService;
-            _urlEncoder = urlEncoder;
-        }
+        private readonly UserManager<IdentityUser> _userManager = userManager;
+        private readonly SignInManager<IdentityUser> _signInManager = signInManager;
+        private readonly IEmailService _emailService = emailService;
+        private readonly UrlEncoder _urlEncoder = urlEncoder;
 
         #region Register
         [HttpGet]
@@ -40,12 +32,12 @@ namespace IdentityProject.Web.Controllers
             {
                 var user = new AppUser
                 {
-                    UserName = model.UserName,
-                    Email = model.Email,
-                    Name = model.Name,
+                    UserName = model.UserName!,
+                    Email = model.Email!,
+                    Name = model.Name!,
                     Address = model.Address,
                     Birthdate = model.Birthdate,
-                    Country = model.Country,
+                    Country = model.Country!,
                     CountryCode = model.CountryCode,
                     City = model.City,
                     Url = model.Url,
@@ -53,7 +45,7 @@ namespace IdentityProject.Web.Controllers
                     State = true
                 };
 
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var result = await _userManager.CreateAsync(user, model.Password!);
 
                 if (result.Succeeded)
                 {
@@ -70,7 +62,7 @@ namespace IdentityProject.Web.Controllers
                     <p>¡Esperamos que disfrutes de IdentityProject!</p>
                     <p>Saludos,</p>
                     <p>El equipo de IdentityProject</p>";
-                    await _emailService.SendEmailAsync(model.Email, subject, bodyHtml);
+                    await _emailService.SendEmailAsync(model.Email!, subject, bodyHtml);
                     #endregion
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
@@ -119,7 +111,7 @@ namespace IdentityProject.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+                var result = await _signInManager.PasswordSignInAsync(model.UserName!, model.Password!, model.RememberMe, lockoutOnFailure: true);
 
                 if (result.Succeeded)
                     return LocalRedirect(returnUrl);
@@ -164,7 +156,7 @@ namespace IdentityProject.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                var user = await _userManager.FindByEmailAsync(model.Email!);
                 if (user == null)
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
@@ -184,7 +176,7 @@ namespace IdentityProject.Web.Controllers
                 <p>Atentamente,</p>
                 <p>El equipo de IdentityProject</p>";
 
-                await _emailService.SendEmailAsync(model.Email, subject, bodyHtml);
+                await _emailService.SendEmailAsync(model.Email!, subject, bodyHtml);
 
                 return RedirectToAction(nameof(ForgotPasswordConfirmation));
             }
@@ -211,14 +203,14 @@ namespace IdentityProject.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                var user = await _userManager.FindByEmailAsync(model.Email!);
                 if (user == null)
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                     return View(model);
                 }
 
-                var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+                var result = await _userManager.ResetPasswordAsync(user, model.Code!, model.Password!);
                 if (result.Succeeded)
                 {
                     return RedirectToAction(nameof(ResetPasswordConfirmation));
@@ -325,7 +317,7 @@ namespace IdentityProject.Web.Controllers
                 return View(model);
             }
 
-            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(model.Code, model.RememberMe, rememberClient: true);
+            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(model.Code!, model.RememberMe, rememberClient: true);
             if (result.Succeeded)
             {
                 return LocalRedirect(model.ReturnUrl);

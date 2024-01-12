@@ -25,6 +25,10 @@ In this project, I created a new application using the technology of **ASP.NET I
 - dotnet sln add <file.csproj>
 - dotnet add <file.csproj> reference <file.csproj>
 
+### For execute the project
+- dotnet build
+- dotnet watch run --project <file.csproj>
+
 ### For migrations with Code First
 
 - dotnet ef migrations add <name-new-migration>

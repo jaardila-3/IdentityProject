@@ -9,6 +9,6 @@ namespace IdentityProject.Web.Models
         [EmailAddress]
         [Display(Name = "Correo electrónico")]
         [DataType(DataType.EmailAddress)]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
     }
 }

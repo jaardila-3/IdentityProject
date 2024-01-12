@@ -6,7 +6,7 @@ namespace IdentityProject.Web.Models
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [Display(Name = "Código del autenticador de dos factores")]
-        public string Code { get; set; } = string.Empty;
+        public string? Code { get; set; }
 
         public string? ReturnUrl { get; set; }
 
