@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IdentityProject.Web.Models
 {
@@ -6,7 +7,7 @@ namespace IdentityProject.Web.Models
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]
-        [DataType(DataType.Text)]        
+        [DataType(DataType.Text)]
         [Display(Name = "Usuario")]
         public string? UserName { get; set; }
 
@@ -22,7 +23,6 @@ namespace IdentityProject.Web.Models
         [Display(Name = "Contraseña")]
         public string? Password { get; set; }
 
-        [Required(ErrorMessage = "La confirmación de la contraseña es obligatoria")]
         [Compare("Password", ErrorMessage = "Las contraseñas no coinciden")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirmar Contraseña")]
@@ -35,7 +35,7 @@ namespace IdentityProject.Web.Models
         public string? Name { get; set; }
 
         [StringLength(40, ErrorMessage = "La {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]
-        [DataType(DataType.Url)]      
+        [DataType(DataType.Url)]
         [Display(Name = "Página web")]
         public string? Url { get; set; }
 
@@ -63,10 +63,14 @@ namespace IdentityProject.Web.Models
         [DataType(DataType.Text)]
         [Display(Name = "Dirección")]
         public string? Address { get; set; }
-        
+
         [Display(Name = "Fecha de Nacimiento")]
         [DataType(DataType.Date)]
         public DateTime? Birthdate { get; set; }
-        
+
+        public IEnumerable<SelectListItem>? Roles { get; set; }
+
+        [Display(Name = "Rol")]
+        public string? SelectedRole { get; set; }
     }
 }
