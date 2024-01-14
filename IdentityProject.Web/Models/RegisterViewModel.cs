@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IdentityProject.Web.Models
 {
-    public class RegisterViewModel
+    public record RegisterViewModel
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]

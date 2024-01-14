@@ -9,6 +9,8 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using IdentityProject.Web.Models.Enum;
 using Microsoft.EntityFrameworkCore;
+using IdentityProject.Common.ExtensionMethods;
+using IdentityProject.Web.Models.MapperExtensions;
 
 namespace IdentityProject.Web.Controllers;
 
@@ -44,21 +46,8 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
     {
         if (ModelState.IsValid)
         {
-            var user = new AppUser
-            {
-                UserName = model.UserName!,
-                Email = model.Email!,
-                Name = model.Name!,
-                Address = model.Address,
-                Birthdate = model.Birthdate,
-                Country = model.Country!,
-                CountryCode = model.CountryCode,
-                City = model.City,
-                Url = model.Url,
-                PhoneNumber = model.PhoneNumber,
-                State = true
-            };
-
+            var user = model.ToDomain();
+            user.State = true;
             var result = await _userManager.CreateAsync(user, model.Password!);
 
             if (result.Succeeded)
@@ -66,21 +55,7 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
                 //role assignment
                 await _userManager.AddToRoleAsync(user, nameof(RoleType.RegisteredUser));
 
-                #region Implementation email confirmation in registration
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code }, protocol: HttpContext.Request.Scheme);
-                var subject = "Confirmar su cuenta de IdentityProject";
-                var bodyHtml = @$"<p>Hola,</p>
-                    <p>Gracias por registrarte en IdentityProject. Estamos encantados de tenerte como usuario.</p>
-                    <p>Para completar tu registro y acceder a todas las funcionalidades de la aplicación, solo tienes que hacer clic en el siguiente enlace:</p>
-                    <p><a href='{callbackUrl}'>Confirmar cuenta</a></p>
-                    <p>Este enlace es válido por 24 horas. Si no lo usas dentro de ese plazo, deberás registrarte de nuevo.</p> 
-                    <p>Si tienes alguna duda o problema, puedes contactarnos en (email de soporte).</p>
-                    <p>¡Esperamos que disfrutes de IdentityProject!</p>
-                    <p>Saludos,</p>
-                    <p>El equipo de IdentityProject</p>";
-                await _emailService.SendEmailAsync(model.Email!, subject, bodyHtml);
-                #endregion
+                await SendEmailConfirmationRegisterAsync(user, model.Email!);
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToAction(nameof(HomeController.Index), "Home");
@@ -95,33 +70,12 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
     [HttpGet]
     public async Task<IActionResult> RegisterAdmin()
     {
-        //roles creation
-        if (!(await _roleManager.RoleExistsAsync(nameof(RoleType.RegisteredUser))))
-            await _roleManager.CreateAsync(new IdentityRole(nameof(RoleType.RegisteredUser)));
-
-        if (!(await _roleManager.RoleExistsAsync(nameof(RoleType.Admin))))
-            await _roleManager.CreateAsync(new IdentityRole(nameof(RoleType.Admin)));
-
-        //select list all roles for register
-        //var roles1 = await _roleManager.Roles.ToListAsync();
-
-        List<SelectListItem> roles =
-        [
-            new SelectListItem()
-            {
-                Value = nameof(RoleType.RegisteredUser),
-                Text = "Usuario registrado"
-            },
-            new SelectListItem()
-            {
-                Value = nameof(RoleType.Admin),
-                Text = "Administrador"
-            },
-        ];
+        await CreateRolesAsync();
+        List<SelectListItem> roleItems = await GetRoleItemsAsync();
 
         RegisterViewModel model = new()
         {
-            Roles = roles
+            Roles = roleItems
         };
         return View(model);
     }
@@ -132,21 +86,8 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
     {
         if (ModelState.IsValid)
         {
-            var user = new AppUser
-            {
-                UserName = model.UserName!,
-                Email = model.Email!,
-                Name = model.Name!,
-                Address = model.Address,
-                Birthdate = model.Birthdate,
-                Country = model.Country!,
-                CountryCode = model.CountryCode,
-                City = model.City,
-                Url = model.Url,
-                PhoneNumber = model.PhoneNumber,
-                State = true
-            };
-
+            var user = model.ToDomain();
+            user.State = true;
             var result = await _userManager.CreateAsync(user, model.Password!);
 
             if (result.Succeeded)
@@ -157,21 +98,7 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
                 else
                     await _userManager.AddToRoleAsync(user, nameof(RoleType.RegisteredUser));
 
-                #region Implementation email confirmation in registration
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code }, protocol: HttpContext.Request.Scheme);
-                var subject = "Confirmar su cuenta de IdentityProject";
-                var bodyHtml = @$"<p>Hola,</p>
-                    <p>Gracias por registrarte en IdentityProject. Estamos encantados de tenerte como usuario.</p>
-                    <p>Para completar tu registro y acceder a todas las funcionalidades de la aplicación, solo tienes que hacer clic en el siguiente enlace:</p>
-                    <p><a href='{callbackUrl}'>Confirmar cuenta</a></p>
-                    <p>Este enlace es válido por 24 horas. Si no lo usas dentro de ese plazo, deberás registrarte de nuevo.</p> 
-                    <p>Si tienes alguna duda o problema, puedes contactarnos en (email de soporte).</p>
-                    <p>¡Esperamos que disfrutes de IdentityProject!</p>
-                    <p>Saludos,</p>
-                    <p>El equipo de IdentityProject</p>";
-                await _emailService.SendEmailAsync(model.Email!, subject, bodyHtml);
-                #endregion
+                await SendEmailConfirmationRegisterAsync(user, model.Email!);
 
                 //await _signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToAction(nameof(HomeController.Index), "Home");
@@ -180,21 +107,7 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
             ValidateErrors(result);
         }
 
-        //select list roles
-        List<SelectListItem> roles =
-        [
-            new SelectListItem()
-            {
-                Value = nameof(RoleType.RegisteredUser),
-                Text = "Usuario registrado"
-            },
-            new SelectListItem()
-            {
-                Value = nameof(RoleType.Admin),
-                Text = "Administrador"
-            },
-        ];
-
+        List<SelectListItem> roles = await GetRoleItemsAsync();
         model.Roles = roles;
 
         return View(model);
@@ -369,6 +282,51 @@ public class AccountController(UserManager<IdentityUser> userManager, SignInMana
         {
             ModelState.AddModelError(string.Empty, error.Description);
         }
+    }
+
+    private async Task CreateRolesAsync()
+    {
+        if (!(await _roleManager.RoleExistsAsync(nameof(RoleType.RegisteredUser))))
+            await _roleManager.CreateAsync(new IdentityRole(nameof(RoleType.RegisteredUser)));
+
+        if (!(await _roleManager.RoleExistsAsync(nameof(RoleType.Admin))))
+            await _roleManager.CreateAsync(new IdentityRole(nameof(RoleType.Admin)));
+    }
+
+    private async Task<List<SelectListItem>> GetRoleItemsAsync()
+    {
+        var roles = await _roleManager.Roles.ToListAsync();
+        List<SelectListItem> roleItems = [];
+        foreach (var role in roles)
+        {
+            if (Enum.TryParse<RoleType>(role.Name!, out var roleType))
+            {
+                roleItems.Add(new SelectListItem()
+                {
+                    Value = roleType.ToString(),
+                    Text = roleType.DisplayName()
+                });
+            }
+        }
+        return roleItems;
+    }
+
+    [AllowAnonymous]
+    private async Task SendEmailConfirmationRegisterAsync(AppUser user, string email)
+    {
+        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code }, protocol: HttpContext.Request.Scheme);
+        var subject = "Confirmar su cuenta de IdentityProject";
+        var bodyHtml = @$"<p>Hola,</p>
+                    <p>Usted ha sido registrado en IdentityProject. Estamos encantados de tenerte como usuario.</p>
+                    <p>Para completar tu registro y acceder a todas las funcionalidades de la aplicación, solo tienes que hacer clic en el siguiente enlace:</p>
+                    <p><a href='{callbackUrl}'>Confirmar cuenta</a></p>
+                    <p>Este enlace es válido por 24 horas. Si no lo usas dentro de ese plazo, deberás registrarte de nuevo.</p> 
+                    <p>Si tienes alguna duda o problema, puedes contactarnos en (email de soporte).</p>
+                    <p>¡Esperamos que disfrutes de IdentityProject!</p>
+                    <p>Saludos,</p>
+                    <p>El equipo de IdentityProject</p>";
+        await _emailService.SendEmailAsync(email, subject, bodyHtml);
     }
     #endregion
 

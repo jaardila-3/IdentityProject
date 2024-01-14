@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IdentityProject.Web.Models
 {
-    public class VerifyAuthenticatorCodeViewModel
+    public record VerifyAuthenticatorCodeViewModel
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [Display(Name = "Código del autenticador de dos factores")]

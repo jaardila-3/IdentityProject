@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\IdentityProject.DataAccess\IdentityProject.DataAccess.csproj" />
     <ProjectReference Include="..\IdentityProject.Services\IdentityProject.Services.csproj" />
+    <ProjectReference Include="..\IdentityProject.Common\IdentityProject.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,8 +1,12 @@
+using System.ComponentModel;
+
 namespace IdentityProject.Web.Models.Enum
 {
     public enum RoleType
     {
+        [Description("Administrador")]
         Admin,
-        RegisteredUser,
+        [Description("Usuario registrado")]
+        RegisteredUser
     }
 }

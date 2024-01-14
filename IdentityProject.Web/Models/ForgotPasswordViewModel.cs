@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IdentityProject.Web.Models
 {
-    public class ForgotPasswordViewModel
+    public record ForgotPasswordViewModel
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [EmailAddress]

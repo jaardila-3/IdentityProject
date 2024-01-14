@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IdentityProject.Web.Models
 {
-    public class TwoFactorAuthenticationViewModel
+    public record TwoFactorAuthenticationViewModel
     {
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [Display(Name = "Token")]
