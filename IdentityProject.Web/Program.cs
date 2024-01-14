@@ -1,5 +1,7 @@
 using IdentityProject.DataAccess.Persistence;
+using IdentityProject.Business.identity;
 using IdentityProject.Business.Services;
+using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services;
 using IdentityProject.Services.SMTP.MailJet;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 //add IoC
+builder.Services.AddTransient<IAccountManager, AccountManager>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 

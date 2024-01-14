@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace IdentityProject.Web.Models.Enum
+namespace IdentityProject.Common.Enums
 {
     public enum RoleType
     {
