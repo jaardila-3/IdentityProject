@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using IdentityProject.Domain.Entities;
+using IdentityProject.Common.Dto;
 using Microsoft.AspNetCore.Identity;
 
 namespace IdentityProject.Business.Interfaces.Identity
@@ -7,14 +7,14 @@ namespace IdentityProject.Business.Interfaces.Identity
     public interface IAccountManager
     {
         #region Users
-        Task<IdentityResult> CreateUserAsync(AppUser user, string password);
-        Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
+        Task<(IdentityResult, string)> CreateUserAsync(UserDto user, string password);
+        Task<IdentityResult> AddToRoleAsync(IdentityUser user, string role);
         Task<IdentityUser?> FindByIdAsync(string userId);
+        Task<string> GenerateEmailConfirmationTokenAsync(IdentityUser user);
         Task<IdentityResult> ConfirmEmailAsync(IdentityUser user, string token);
         Task<IdentityUser?> FindByEmailAsync(string email);
         Task<string> GeneratePasswordResetTokenAsync(IdentityUser user);
         Task<IdentityResult> ResetPasswordAsync(IdentityUser user, string token, string newPassword);
-        Task<string> GenerateEmailConfirmationTokenAsync(AppUser user);
         Task<IdentityUser?> GetUserAsync(ClaimsPrincipal principal);
         Task<IdentityResult> ResetAuthenticatorKeyAsync(IdentityUser user);
         Task<string?> GetAuthenticatorKeyAsync(IdentityUser user);
@@ -23,7 +23,7 @@ namespace IdentityProject.Business.Interfaces.Identity
         #endregion
 
         #region SignIn
-        Task SignInAsync(AppUser user, bool isPersistent, string? authenticationMethod = null);
+        Task SignInAsync(IdentityUser user, bool isPersistent, string? authenticationMethod = null);
         Task SignOutAsync();
         Task<SignInResult> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure);
         Task<IdentityUser?> GetTwoFactorAuthenticationUserAsync();

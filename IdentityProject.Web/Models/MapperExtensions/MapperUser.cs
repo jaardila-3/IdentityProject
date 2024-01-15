@@ -1,24 +1,12 @@
-using IdentityProject.Domain.Entities;
+using IdentityProject.Common.Dto;
 
 namespace IdentityProject.Web.Models.MapperExtensions
 {
     public static class MapperUser
     {
-        public static AppUser ToDomain(this RegisterViewModel model)
+        public static UserDto ToDto(this RegisterViewModel model)
         {
-            return new AppUser
-            {
-                UserName = model.UserName,
-                Email = model.Email,
-                Name = model.Name,
-                Address = model.Address,
-                Birthdate = model.Birthdate,
-                Country = model.Country,
-                CountryCode = model.CountryCode,
-                City = model.City,
-                Url = model.Url,
-                PhoneNumber = model.PhoneNumber,
-            };
+            return new UserDto(model.UserName, model.Email, model.Name, model.Url, model.CountryCode, model.PhoneNumber, model.Country, model.City, model.Address, model.Birthdate, model.State);
         }
     }
 }

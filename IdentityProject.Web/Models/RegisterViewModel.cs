@@ -68,6 +68,8 @@ namespace IdentityProject.Web.Models
         [DataType(DataType.Date)]
         public DateTime? Birthdate { get; set; }
 
+        public bool State { get; set; }
+
         public IEnumerable<SelectListItem>? Roles { get; set; }
 
         [Display(Name = "Rol")]
