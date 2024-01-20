@@ -1,51 +1,36 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
 using IdentityProject.Web.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
+using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Common.Enums;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IdentityProject.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IIdentityManager identityManager) : Controller
 {
-    private readonly ILogger<HomeController> _logger;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly IIdentityManager _identityManager = identityManager;
 
-    public HomeController(ILogger<HomeController> logger, UserManager<IdentityUser> userManager)
-    {
-        _logger = logger;
-        _userManager = userManager;
-    }
-
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
-        {
+        var user = await _identityManager.GetUserAsync(User);
+
+        if (user is null)
             ViewData["IsTwoFactorAuthenticationActive"] = false;
-        }
         else
-        {
             ViewData["IsTwoFactorAuthenticationActive"] = user.TwoFactorEnabled;
-        }
+
         return View();
     }
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+    [HttpGet]
+    public IActionResult Privacy() => View();
 
     [Authorize(Roles = nameof(RoleType.Admin))]
-    public IActionResult ProtectedView()
-    {
-        return View();
-    }
+    [HttpGet]
+    public IActionResult ProtectedView() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
+    public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 }

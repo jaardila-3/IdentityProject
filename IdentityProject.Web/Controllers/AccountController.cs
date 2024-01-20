@@ -14,9 +14,9 @@ using System.Text.Encodings.Web;
 namespace IdentityProject.Web.Controllers;
 
 [Authorize]
-public class AccountController(IAccountManager accountManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
+public class AccountController(IIdentityManager identityManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
 {
-    private readonly IAccountManager _accountManager = accountManager;
+    private readonly IIdentityManager _identityManager = identityManager;
     private readonly IEmailService _emailService = emailService;
     private readonly UrlEncoder _urlEncoder = urlEncoder;
 
@@ -25,7 +25,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     [AllowAnonymous]
     public async Task<IActionResult> Register()
     {
-        await _accountManager.CreateRolesAsync();
+        await _identityManager.CreateRolesAsync();
         RegisterViewModel model = new();
         return View(model);
     }
@@ -39,19 +39,19 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         {
             model.State = true;
             var user = model.ToDto();
-            var (identityResult, userId) = await _accountManager.CreateUserAsync(user, model.Password!);
+            var (identityResult, userId) = await _identityManager.CreateUserAsync(user, model.Password!);
 
             if (identityResult.Succeeded)
             {
-                var identityUser = await _accountManager.FindByIdAsync(userId);
+                var identityUser = await _identityManager.FindByIdAsync(userId);
                 if (identityUser is null)
                     RedirectToAction(nameof(Error));
 
-                await _accountManager.AddToRoleAsync(identityUser!, nameof(RoleType.RegisteredUser));
+                await _identityManager.AddToRoleAsync(identityUser!, nameof(RoleType.RegisteredUser));
 
                 await SendEmailConfirmationRegisterAsync(identityUser!, model.Email!);
 
-                await _accountManager.SignInAsync(identityUser!, false);
+                await _identityManager.SignInAsync(identityUser!, false);
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
 
@@ -64,7 +64,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     [HttpGet]
     public async Task<IActionResult> RegisterAdmin()
     {
-        await _accountManager.CreateRolesAsync();
+        await _identityManager.CreateRolesAsync();
         List<SelectListItem> roleItems = await GetRoleItemsAsync();
 
         RegisterViewModel model = new()
@@ -82,18 +82,18 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         {
             model.State = true;
             var user = model.ToDto();
-            var (identityResult, userId) = await _accountManager.CreateUserAsync(user, model.Password!);
+            var (identityResult, userId) = await _identityManager.CreateUserAsync(user, model.Password!);
 
             if (identityResult.Succeeded)
             {
-                var identityUser = await _accountManager.FindByIdAsync(userId);
+                var identityUser = await _identityManager.FindByIdAsync(userId);
                 if (identityUser is null)
                     RedirectToAction(nameof(Error));
 
-                if (!string.IsNullOrEmpty(model.SelectedRole) && await _accountManager.RoleExistsAsync(model.SelectedRole!))
-                    await _accountManager.AddToRoleAsync(identityUser!, model.SelectedRole!);
+                if (!string.IsNullOrEmpty(model.SelectedRole) && await _identityManager.RoleExistsAsync(model.SelectedRole!))
+                    await _identityManager.AddToRoleAsync(identityUser!, model.SelectedRole!);
                 else
-                    await _accountManager.AddToRoleAsync(identityUser!, nameof(RoleType.RegisteredUser));
+                    await _identityManager.AddToRoleAsync(identityUser!, nameof(RoleType.RegisteredUser));
 
                 await SendEmailConfirmationRegisterAsync(identityUser!, model.Email!);
 
@@ -117,11 +117,11 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
             RedirectToAction(nameof(Error));
 
-        var user = await _accountManager.FindByIdAsync(userId);
+        var user = await _identityManager.FindByIdAsync(userId);
         if (user is null)
             RedirectToAction(nameof(Error));
 
-        var result = await _accountManager.ConfirmEmailAsync(user!, code);
+        var result = await _identityManager.ConfirmEmailAsync(user!, code);
         if (!result.Succeeded)
             RedirectToAction(nameof(Error));
 
@@ -148,7 +148,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
 
         if (ModelState.IsValid)
         {
-            var result = await _accountManager.PasswordSignInAsync(model.UserName!, model.Password!, model.RememberMe, true);
+            var result = await _identityManager.PasswordSignInAsync(model.UserName!, model.Password!, model.RememberMe, true);
 
             if (result.Succeeded)
                 return LocalRedirect(returnUrl);
@@ -175,7 +175,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await _accountManager.SignOutAsync();
+        await _identityManager.SignOutAsync();
         return RedirectToAction(nameof(HomeController.Index), "Home");
     }
     #endregion
@@ -183,10 +183,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     #region Forgot Password
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ForgotPassword()
-    {
-        return View();
-    }
+    public IActionResult ForgotPassword() => View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -195,14 +192,14 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     {
         if (ModelState.IsValid)
         {
-            var user = await _accountManager.FindByEmailAsync(model.Email!);
+            var user = await _identityManager.FindByEmailAsync(model.Email!);
             if (user is null)
             {
                 ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                 return View(model);
             }
 
-            var code = await _accountManager.GeneratePasswordResetTokenAsync(user);
+            var code = await _identityManager.GeneratePasswordResetTokenAsync(user);
             var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code }, protocol: HttpContext.Request.Scheme);
 
             var subject = "Recuperar contraseña - IdentityProject";
@@ -224,17 +221,11 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ForgotPasswordConfirmation()
-    {
-        return View();
-    }
+    public IActionResult ForgotPasswordConfirmation() => View();
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ResetPassword(string? code = null)
-    {
-        return code is null ? RedirectToAction(nameof(Error)) : View();
-    }
+    public IActionResult ResetPassword(string? code = null) => code is null ? RedirectToAction(nameof(Error)) : View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -243,14 +234,14 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     {
         if (ModelState.IsValid)
         {
-            var user = await _accountManager.FindByEmailAsync(model.Email!);
+            var user = await _identityManager.FindByEmailAsync(model.Email!);
             if (user is null)
             {
                 ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                 return View(model);
             }
 
-            var result = await _accountManager.ResetPasswordAsync(user, model.Code!, model.Password!);
+            var result = await _identityManager.ResetPasswordAsync(user, model.Code!, model.Password!);
             if (result.Succeeded)
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
 
@@ -262,10 +253,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ResetPasswordConfirmation()
-    {
-        return View();
-    }
+    public IActionResult ResetPasswordConfirmation() => View();
     #endregion
 
     #region Helpers
@@ -277,7 +265,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
 
     private async Task<List<SelectListItem>> GetRoleItemsAsync()
     {
-        var roles = await _accountManager.GetRolesListAsync() ?? [];
+        var roles = await _identityManager.GetRolesListAsync() ?? [];
         List<SelectListItem> roleItems = [];
 
         foreach (var role in roles)
@@ -296,7 +284,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
 
     private async Task SendEmailConfirmationRegisterAsync(IdentityUser user, string email)
     {
-        var token = await _accountManager.GenerateEmailConfirmationTokenAsync(user);
+        var token = await _identityManager.GenerateEmailConfirmationTokenAsync(user);
         var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = token }, protocol: HttpContext.Request.Scheme);
         var subject = "Confirmar su cuenta de IdentityProject";
         var bodyHtml = @$"<p>Hola,</p>
@@ -315,32 +303,26 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     #region Error
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [AllowAnonymous]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
-    
+    public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult AccessDenied()
-    {
-        return View();
-    }
+    public IActionResult AccessDenied() => View();
     #endregion
 
     #region Two Factor Authentication
     [HttpGet]
     public async Task<IActionResult> ActivateTwoFactorAuthentication()
     {
-        var user = await _accountManager.GetUserAsync(User);
+        var user = await _identityManager.GetUserAsync(User);
         if (user is null)
             return RedirectToAction(nameof(Error));
 
-        var result = await _accountManager.ResetAuthenticatorKeyAsync(user);
+        var result = await _identityManager.ResetAuthenticatorKeyAsync(user);
         if (!result.Succeeded)
             RedirectToAction(nameof(Error));
 
-        var token = await _accountManager.GetAuthenticatorKeyAsync(user);
+        var token = await _identityManager.GetAuthenticatorKeyAsync(user);
         // Create QR code
         string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
         string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(user!.Email!), token);
@@ -355,14 +337,14 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     {
         if (ModelState.IsValid)
         {
-            var user = await _accountManager.GetUserAsync(User);
+            var user = await _identityManager.GetUserAsync(User);
             if (user is null)
                 return RedirectToAction(nameof(Error));
 
-            var Succeeded = await _accountManager.VerifyTwoFactorTokenAsync(user, model.Code!);
+            var Succeeded = await _identityManager.VerifyTwoFactorTokenAsync(user, model.Code!);
             if (Succeeded)
             {
-                var result = await _accountManager.SetTwoFactorEnabledAsync(user, true);
+                var result = await _identityManager.SetTwoFactorEnabledAsync(user, true);
                 if (!result.Succeeded)
                     RedirectToAction(nameof(Error));
             }
@@ -376,17 +358,14 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     }
 
     [HttpGet]
-    public IActionResult AuthenticatorConfirmation()
-    {
-        return View();
-    }
+    public IActionResult AuthenticatorConfirmation() => View();
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> VerifyAuthenticatorCode(bool rememberMe, string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
-        var user = await _accountManager.GetTwoFactorAuthenticationUserAsync();
+        var user = await _identityManager.GetTwoFactorAuthenticationUserAsync();
         if (user is null)
             RedirectToAction(nameof(Error));
 
@@ -406,7 +385,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
             return View(model);
         }
 
-        var result = await _accountManager.TwoFactorAuthenticatorSignInAsync(model.Code!, model.RememberMe, true);
+        var result = await _identityManager.TwoFactorAuthenticatorSignInAsync(model.Code!, model.RememberMe, true);
         if (result.Succeeded)
         {
             return LocalRedirect(model.ReturnUrl);
@@ -425,12 +404,12 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     [HttpGet]
     public async Task<IActionResult> DisableTwoFactorAuthentication()
     {
-        var user = await _accountManager.GetUserAsync(User);
+        var user = await _identityManager.GetUserAsync(User);
         if (user is null)
             return RedirectToAction(nameof(Error));
 
-        var resultReset = await _accountManager.ResetAuthenticatorKeyAsync(user);
-        var resultSet = await _accountManager.SetTwoFactorEnabledAsync(user, false);
+        var resultReset = await _identityManager.ResetAuthenticatorKeyAsync(user);
+        var resultSet = await _identityManager.SetTwoFactorEnabledAsync(user, false);
 
         if (!resultSet.Succeeded || !resultReset.Succeeded)
             RedirectToAction(nameof(Error));

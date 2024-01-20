@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace IdentityProject.Business.identity;
 
-public class AccountManager(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, RoleManager<IdentityRole> roleManager) : IAccountManager
+public class IdentityManager(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, RoleManager<IdentityRole> roleManager) : IIdentityManager
 {
     private readonly UserManager<IdentityUser> _userManager = userManager;
     private readonly RoleManager<IdentityRole> _roleManager = roleManager;

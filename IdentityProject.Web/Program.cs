@@ -42,7 +42,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 //add IoC
-builder.Services.AddTransient<IAccountManager, AccountManager>();
+builder.Services.AddTransient<IIdentityManager, IdentityManager>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 
@@ -55,7 +55,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
