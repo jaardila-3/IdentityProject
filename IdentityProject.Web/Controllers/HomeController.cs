@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using IdentityProject.Web.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using IdentityProject.Common.Enums;
 
 namespace IdentityProject.Web.Controllers;
 
@@ -29,8 +31,14 @@ public class HomeController : Controller
         }
         return View();
     }
-    
+
     public IActionResult Privacy()
+    {
+        return View();
+    }
+
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public IActionResult ProtectedView()
     {
         return View();
     }

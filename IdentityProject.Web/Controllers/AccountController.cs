@@ -44,7 +44,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
             if (identityResult.Succeeded)
             {
                 var identityUser = await _accountManager.FindByIdAsync(userId);
-                if (identityUser == null)
+                if (identityUser is null)
                     RedirectToAction(nameof(Error));
 
                 await _accountManager.AddToRoleAsync(identityUser!, nameof(RoleType.RegisteredUser));
@@ -87,7 +87,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
             if (identityResult.Succeeded)
             {
                 var identityUser = await _accountManager.FindByIdAsync(userId);
-                if (identityUser == null)
+                if (identityUser is null)
                     RedirectToAction(nameof(Error));
 
                 if (!string.IsNullOrEmpty(model.SelectedRole) && await _accountManager.RoleExistsAsync(model.SelectedRole!))
@@ -118,7 +118,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
             RedirectToAction(nameof(Error));
 
         var user = await _accountManager.FindByIdAsync(userId);
-        if (user == null)
+        if (user is null)
             RedirectToAction(nameof(Error));
 
         var result = await _accountManager.ConfirmEmailAsync(user!, code);
@@ -196,7 +196,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         if (ModelState.IsValid)
         {
             var user = await _accountManager.FindByEmailAsync(model.Email!);
-            if (user == null)
+            if (user is null)
             {
                 ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                 return View(model);
@@ -233,7 +233,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     [AllowAnonymous]
     public IActionResult ResetPassword(string? code = null)
     {
-        return code == null ? RedirectToAction(nameof(Error)) : View();
+        return code is null ? RedirectToAction(nameof(Error)) : View();
     }
 
     [HttpPost]
@@ -244,7 +244,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         if (ModelState.IsValid)
         {
             var user = await _accountManager.FindByEmailAsync(model.Email!);
-            if (user == null)
+            if (user is null)
             {
                 ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                 return View(model);
@@ -319,6 +319,13 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+    
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult AccessDenied()
+    {
+        return View();
+    }
     #endregion
 
     #region Two Factor Authentication
@@ -326,7 +333,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     public async Task<IActionResult> ActivateTwoFactorAuthentication()
     {
         var user = await _accountManager.GetUserAsync(User);
-        if (user == null)
+        if (user is null)
             return RedirectToAction(nameof(Error));
 
         var result = await _accountManager.ResetAuthenticatorKeyAsync(user);
@@ -349,7 +356,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
         if (ModelState.IsValid)
         {
             var user = await _accountManager.GetUserAsync(User);
-            if (user == null)
+            if (user is null)
                 return RedirectToAction(nameof(Error));
 
             var Succeeded = await _accountManager.VerifyTwoFactorTokenAsync(user, model.Code!);
@@ -380,7 +387,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     {
         returnUrl ??= Url.Content("~/");
         var user = await _accountManager.GetTwoFactorAuthenticationUserAsync();
-        if (user == null)
+        if (user is null)
             RedirectToAction(nameof(Error));
 
         ViewData["ReturnUrl"] = returnUrl;
@@ -419,7 +426,7 @@ public class AccountController(IAccountManager accountManager, IEmailService ema
     public async Task<IActionResult> DisableTwoFactorAuthentication()
     {
         var user = await _accountManager.GetUserAsync(User);
-        if (user == null)
+        if (user is null)
             return RedirectToAction(nameof(Error));
 
         var resultReset = await _accountManager.ResetAuthenticatorKeyAsync(user);
