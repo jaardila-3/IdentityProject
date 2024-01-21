@@ -1,12 +1,16 @@
-using IdentityProject.DataAccess.Persistence;
 using IdentityProject.Business.identity;
 using IdentityProject.Business.Services;
 using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services;
 using IdentityProject.Services.SMTP.MailJet;
+using IdentityProject.DataAccess.Persistence;
+using IdentityProject.DataAccess.Interfaces.Repositories;
+using IdentityProject.DataAccess.Repositories.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using IdentityProject.Business.Interfaces.Features;
+using IdentityProject.Business.Features.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,9 +46,14 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 //add IoC
+//Transient
 builder.Services.AddTransient<IIdentityManager, IdentityManager>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
+//Scoped
+builder.Services.AddScoped<IUnitOfWork, UnitOfWorkIdentity>();
+builder.Services.AddScoped(typeof(IRepositoryWriteCommands<>), typeof(RepositoryIdentity<>));
+builder.Services.AddScoped<IUserManager, UserManager>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
