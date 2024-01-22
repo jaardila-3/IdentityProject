@@ -20,6 +20,7 @@ public interface IIdentityManager
     Task<string?> GetAuthenticatorKeyAsync(IdentityUser user);
     Task<bool> VerifyTwoFactorTokenAsync(IdentityUser user, string token);
     Task<IdentityResult> SetTwoFactorEnabledAsync(IdentityUser user, bool enabled);
+    Task<IdentityResult> UpdateUserAsync(UserDto userDto);
     #endregion
 
     #region SignIn

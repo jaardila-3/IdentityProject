@@ -1,4 +1,4 @@
-@model RegisterViewModel
+@model EditProfileViewModel
 
 @{
     ViewData["Title"] = "Editar Perfil";
@@ -23,13 +23,13 @@
 
                     <div class="mb-3">
                         <label class="col-md-4" asp-for="Email"></label>
-                        <input asp-for="Email" class="form-control" placeholder="Ingresa un correo electrónico">
+                        <input asp-for="Email" class="form-control" placeholder="Ingresa un correo electrónico" disabled>
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
                         <label class="col-md-4" asp-for="UserName"></label>
-                        <input asp-for="UserName" class="form-control" placeholder="Ingresa el nombre de usuario">
+                        <input asp-for="UserName" class="form-control" placeholder="Ingresa el nombre de usuario" disabled>
                         <span asp-validation-for="UserName" class="text-danger"></span>
                     </div>
 
@@ -45,15 +45,15 @@
                         <span asp-validation-for="CountryCode" class="text-danger"></span>
                     </div>
 
+                </div>
+
+                <div class="col-sm-6">
+
                     <div class="mb-3">
                         <label class="col-md-4" asp-for="PhoneNumber"></label>
                         <input asp-for="PhoneNumber" class="form-control" placeholder="Ingresa el número de teléfono">
                         <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                     </div>
-
-                </div>
-
-                <div class="col-sm-6">
 
                     <div class="mb-3">
                         <label class="col-md-4" asp-for="Country"></label>
@@ -75,7 +75,7 @@
 
                     <div class="mb-3">
                         <label class="col-md-4" asp-for="Birthdate"></label>
-                        <input type="text" name="Birthdate" class="form-control" id="datepicker"
+                        <input type="text" asp-for="Birthdate" class="form-control" id="datepicker"
                             placeholder="Ejemplo: 25/10/1990">
                         <span asp-validation-for="Birthdate" class="text-danger"></span>
                     </div>

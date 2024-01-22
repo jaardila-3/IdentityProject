@@ -53,7 +53,7 @@ builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 //Scoped
 builder.Services.AddScoped<IUnitOfWork, UnitOfWorkIdentity>();
 builder.Services.AddScoped(typeof(IRepositoryWriteCommands<>), typeof(RepositoryIdentity<>));
-builder.Services.AddScoped<IUserManager, UserManager>();
+builder.Services.AddScoped<IUserAccountManager, UserAccountManager>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

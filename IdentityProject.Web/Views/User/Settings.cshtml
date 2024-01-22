@@ -1,0 +1,48 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    ViewData["Title"] = "Configuración";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="card-title text-center">Configuración de la cuenta de @UserManager.GetUserName(User)</h2>
+
+                    @if (User.Identity!.IsAuthenticated)
+                    {
+                        var isTwoFactorAuthenticationActive = ViewData["IsTwoFactorAuthenticationActive"];
+                        if (isTwoFactorAuthenticationActive != null && isTwoFactorAuthenticationActive.ToString()!.ToLower()
+                        == "true")
+                        {
+                            <div class="d-flex justify-content-center align-items-center">
+                                <a asp-controller="Account" asp-action="DisableTwoFactorAuthentication" class="btn btn-danger">
+                                    Desactivar la autenticación de dos factores
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <p class="text-center">
+                                        ¿Desea configurar la autenticación de dos factores?
+                                    </p>
+                                    <div class="text-center">
+                                        <a asp-controller="Account" asp-action="ActivateTwoFactorAuthentication"
+                                            class="btn btn-primary">
+                                            Configurar <i class="bi bi-arrow-right-circle-fill"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

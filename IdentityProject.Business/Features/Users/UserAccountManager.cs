@@ -6,7 +6,7 @@ using IdentityProject.Domain.Entities;
 
 namespace IdentityProject.Business.Features.Users
 {
-    public class UserManager(IUnitOfWork unitOfWork) : IUserManager
+    public class UserAccountManager(IUnitOfWork unitOfWork) : IUserAccountManager
     {
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
 

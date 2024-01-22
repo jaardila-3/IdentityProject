@@ -12,17 +12,7 @@ public class HomeController(IIdentityManager identityManager) : Controller
     private readonly IIdentityManager _identityManager = identityManager;
 
     [HttpGet]
-    public async Task<IActionResult> Index()
-    {
-        var user = await _identityManager.GetUserAsync(User);
-
-        if (user is null)
-            ViewData["IsTwoFactorAuthenticationActive"] = false;
-        else
-            ViewData["IsTwoFactorAuthenticationActive"] = user.TwoFactorEnabled;
-
-        return View();
-    }
+    public IActionResult Index() => View();
 
     [HttpGet]
     public IActionResult Privacy() => View();

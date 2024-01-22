@@ -2,6 +2,7 @@ using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Common.Dto;
 using IdentityProject.Common.Enums;
 using IdentityProject.Common.Mapper.MapperExtensions;
+using IdentityProject.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -45,6 +46,20 @@ public class IdentityManager(UserManager<IdentityUser> userManager, SignInManage
     public async Task<bool> VerifyTwoFactorTokenAsync(IdentityUser user, string token) => await _userManager.VerifyTwoFactorTokenAsync(user, _userManager.Options.Tokens.AuthenticatorTokenProvider, token);
 
     public async Task<IdentityResult> SetTwoFactorEnabledAsync(IdentityUser user, bool enabled) => await _userManager.SetTwoFactorEnabledAsync(user, enabled);
+
+    public async Task<IdentityResult> UpdateUserAsync(UserDto userDto)
+    {
+        var identityUser = (AppUser?)await FindByIdAsync(userDto.Id!) ?? throw new InvalidOperationException("El usuario no existe");
+        identityUser.Name = userDto.Name;
+        identityUser.Url = userDto.Url;
+        identityUser.CountryCode = userDto.CountryCode;
+        identityUser.PhoneNumber = userDto.PhoneNumber;
+        identityUser.Country = userDto.Country;
+        identityUser.City = userDto.City;
+        identityUser.Address = userDto.Address;
+        identityUser.Birthdate = userDto.Birthdate;
+        return await _userManager.UpdateAsync(identityUser);
+    }
     #endregion
 
     #region SignIn
