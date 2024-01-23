@@ -14,6 +14,7 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
     private readonly IIdentityManager _identityManager = identityManager;
     private readonly IUserAccountManager _userAccountManager = userAccountManager;
 
+    #region Edit profile
     [HttpGet]
     public async Task<IActionResult> EditProfile(string id)
     {
@@ -43,7 +44,38 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
 
         return View(model);
     }
+    #endregion
 
+    #region Change password
+    [HttpGet]
+    public IActionResult ChangePassword() => View();
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            var identityUser = await _identityManager.GetUserAsync(User);
+            if (identityUser is null)
+                return RedirectToAction(nameof(Error));
+
+            var token = await _identityManager.GeneratePasswordResetTokenAsync(identityUser);
+            var identityResult = await _identityManager.ResetPasswordAsync(identityUser, token, model.Password!);
+            if (identityResult.Succeeded)
+                return RedirectToAction(nameof(ConfirmationChangePassword));
+            else
+                return View(model);
+        }
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult ConfirmationChangePassword() => View();
+    #endregion
+
+    #region Settings
     [HttpGet]
     public async Task<IActionResult> Settings()
     {
@@ -56,6 +88,7 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
 
         return View();
     }
+    #endregion
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
