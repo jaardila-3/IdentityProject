@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using IdentityProject.Business.Interfaces.Features;
 using IdentityProject.Business.Interfaces.Identity;
+using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
 using IdentityProject.Web.Models.MapperExtensions;
 using Microsoft.AspNetCore.Authorization;
@@ -9,8 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace IdentityProject.Web.Controllers;
 
 [Authorize]
-public class UserController(IIdentityManager identityManager, IUserAccountManager userAccountManager) : Controller
+public class UserController(ILogger<UserController> logger, IErrorController errorController, IIdentityManager identityManager, IUserAccountManager userAccountManager) : Controller
 {
+    private readonly ILogger<UserController> _logger = logger;
+    private readonly IErrorController _errorController = errorController;
     private readonly IIdentityManager _identityManager = identityManager;
     private readonly IUserAccountManager _userAccountManager = userAccountManager;
 
@@ -18,31 +20,50 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
     [HttpGet]
     public async Task<IActionResult> EditProfile(string id)
     {
-        if (id is null)
-            RedirectToAction(nameof(Error));
+        try
+        {
+            var userDto = await _userAccountManager.FindByIdAsync(id ?? throw new ArgumentNullException(nameof(id)))
+                ?? throw new InvalidOperationException("El usuario no existe");
 
-        var userDto = await _userAccountManager.FindByIdAsync(id!);
-        if (userDto is null)
-            RedirectToAction(nameof(Error));
-
-        var viewModel = userDto!.ToViewModel();
-
-        return View(viewModel);
+            var viewModel = userDto.ToViewModel();
+            return View(viewModel);
+        }
+        catch (ArgumentNullException ex)
+        {
+            return _errorController.HandleException(ex, nameof(EditProfile), "id nulo");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return _errorController.HandleException(ex, nameof(EditProfile), "usuario no encontrado");
+        }
+        catch (Exception ex)
+        {
+            return _errorController.HandleException(ex, nameof(EditProfile));
+        }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditProfile(EditProfileViewModel model)
-    {
-        if (ModelState.IsValid)
+    public async Task<IActionResult> EditProfile(EditProfileViewModel viewModel)
+    {        
+        try
         {
-            var userDto = model.ToDto();
-            var identityResult = await _identityManager.UpdateUserAsync(userDto);
-            if (identityResult.Succeeded)
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-        }
+            if (ModelState.IsValid)
+            {
+                var userDto = viewModel.ToDto();
+                var identityResult = await _identityManager.UpdateUserAsync(userDto);
+                if (identityResult.Succeeded)
+                    return RedirectToAction(nameof(HomeController.Index), "Home");
 
-        return View(model);
+                _errorController.HandleErrors(identityResult);
+            }
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            return _errorController.HandleException(ex, nameof(EditProfile));
+        }
     }
     #endregion
 
@@ -52,23 +73,31 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel viewModel)
     {
-        if (ModelState.IsValid)
+        try
         {
-            var identityUser = await _identityManager.GetUserAsync(User);
-            if (identityUser is null)
-                return RedirectToAction(nameof(Error));
+            if (ModelState.IsValid)
+            {
+                var identityUser = await _identityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+                var token = await _identityManager.GeneratePasswordResetTokenAsync(identityUser);
+                var identityResult = await _identityManager.ResetPasswordAsync(identityUser, token, viewModel.Password!);
+                if (identityResult.Succeeded)
+                    return RedirectToAction(nameof(ConfirmationChangePassword));
 
-            var token = await _identityManager.GeneratePasswordResetTokenAsync(identityUser);
-            var identityResult = await _identityManager.ResetPasswordAsync(identityUser, token, model.Password!);
-            if (identityResult.Succeeded)
-                return RedirectToAction(nameof(ConfirmationChangePassword));
-            else
-                return View(model);
+                _errorController.HandleErrors(identityResult);
+            }
+
+            return View(viewModel);
         }
-
-        return View(model);
+        catch (InvalidOperationException ex)
+        {
+            return _errorController.HandleException(ex, nameof(ChangePassword), "usuario no encontrado");
+        }
+        catch (Exception ex)
+        {
+            return _errorController.HandleException(ex, nameof(ChangePassword));
+        }
     }
 
     [HttpGet]
@@ -79,17 +108,21 @@ public class UserController(IIdentityManager identityManager, IUserAccountManage
     [HttpGet]
     public async Task<IActionResult> Settings()
     {
-        var user = await _identityManager.GetUserAsync(User);
+        try
+        {
+            var identityUser = await _identityManager.GetUserAsync(User);
 
-        if (user is null)
-            ViewData["IsTwoFactorAuthenticationActive"] = false;
-        else
-            ViewData["IsTwoFactorAuthenticationActive"] = user.TwoFactorEnabled;
+            if (identityUser is null)
+                ViewData["IsTwoFactorAuthenticationActive"] = false;
+            else
+                ViewData["IsTwoFactorAuthenticationActive"] = identityUser.TwoFactorEnabled;
 
-        return View();
+            return View();
+        }
+        catch (Exception ex)
+        {
+            return _errorController.HandleException(ex, nameof(Settings));
+        }
     }
     #endregion
-
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 }
