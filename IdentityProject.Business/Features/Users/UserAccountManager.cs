@@ -4,18 +4,16 @@ using IdentityProject.Common.Mapper.MapperExtensions;
 using IdentityProject.DataAccess.Interfaces.Repositories;
 using IdentityProject.Domain.Entities;
 
-namespace IdentityProject.Business.Features.Users
+namespace IdentityProject.Business.Features.Users;
+public class UserAccountManager(IUnitOfWork unitOfWork) : IUserAccountManager
 {
-    public class UserAccountManager(IUnitOfWork unitOfWork) : IUserAccountManager
-    {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-        public async Task<UserDto?> FindByIdAsync(string id)
-        {
-            var userEntity = await _unitOfWork.Repository<AppUser>()!.GetByIdAsync(id)
-                ?? throw new InvalidOperationException("El usuario no existe");
-                
-            return userEntity.ToDto();
-        }
+    public async Task<UserDto?> FindByIdAsync(string id)
+    {
+        var userEntity = await _unitOfWork.Repository<AppUser>()!.GetByIdAsync(id)
+            ?? throw new InvalidOperationException("El usuario no existe");
+
+        return userEntity.ToDto();
     }
 }

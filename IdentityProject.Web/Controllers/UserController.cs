@@ -9,9 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace IdentityProject.Web.Controllers;
 
 [Authorize]
-public class UserController(ILogger<UserController> logger, IErrorController errorController, IIdentityManager identityManager, IUserAccountManager userAccountManager) : Controller
+public class UserController(IErrorController errorController, IIdentityManager identityManager, IUserAccountManager userAccountManager) : Controller
 {
-    private readonly ILogger<UserController> _logger = logger;
     private readonly IErrorController _errorController = errorController;
     private readonly IIdentityManager _identityManager = identityManager;
     private readonly IUserAccountManager _userAccountManager = userAccountManager;
@@ -45,7 +44,7 @@ public class UserController(ILogger<UserController> logger, IErrorController err
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProfile(EditProfileViewModel viewModel)
-    {        
+    {
         try
         {
             if (ModelState.IsValid)

@@ -15,9 +15,8 @@ using System.Text.Json;
 namespace IdentityProject.Web.Controllers;
 
 [Authorize]
-public class AccountController(ILogger<UserController> logger, IErrorController errorController, IIdentityManager identityManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
+public class AccountController(IErrorController errorController, IIdentityManager identityManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
 {
-    private readonly ILogger<UserController> _logger = logger;
     private readonly IErrorController _errorController = errorController;
     private readonly IIdentityManager _identityManager = identityManager;
     private readonly IEmailService _emailService = emailService;

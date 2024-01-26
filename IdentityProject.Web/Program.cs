@@ -6,6 +6,7 @@ using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services;
 using IdentityProject.Business.Interfaces.Features;
 using IdentityProject.Business.Features.Users;
+using IdentityProject.Business.Features.Roles;
 using IdentityProject.Services.SMTP.MailJet;
 using IdentityProject.DataAccess.Persistence;
 using IdentityProject.DataAccess.Interfaces.Repositories;
@@ -66,6 +67,8 @@ builder.Services.AddScoped<IErrorController, ErrorController>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWorkIdentity>();
 builder.Services.AddScoped(typeof(IRepositoryWriteCommands<>), typeof(RepositoryIdentity<>));
 builder.Services.AddScoped<IUserAccountManager, UserAccountManager>();
+builder.Services.AddScoped<IRolesRepository, RolesRepository>();
+builder.Services.AddScoped<IRolesAccountManager, RolesAccountManager>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

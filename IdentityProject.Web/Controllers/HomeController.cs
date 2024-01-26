@@ -10,8 +10,4 @@ public class HomeController() : Controller
 
     [HttpGet]
     public IActionResult Privacy() => View();
-
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpGet]
-    public IActionResult ProtectedView() => View();
 }

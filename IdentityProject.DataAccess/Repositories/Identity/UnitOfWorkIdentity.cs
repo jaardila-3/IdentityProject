@@ -5,7 +5,9 @@ namespace IdentityProject.DataAccess.Repositories.Identity;
 public class UnitOfWorkIdentity(ApplicationDbContext context) : IUnitOfWork
 {
     private Dictionary<string, object>? _repositories;
-    protected readonly ApplicationDbContext _context = context;
+    private readonly ApplicationDbContext _context = context;
+    private IRolesRepository? _rolesRepository;
+    public IRolesRepository RolesRepository => _rolesRepository ??= new RolesRepository(_context);
 
     public IRepositoryReadWrite<T>? Repository<T>() where T : class
     {
@@ -18,7 +20,7 @@ public class UnitOfWorkIdentity(ApplicationDbContext context) : IUnitOfWork
             var repositoryType = typeof(RepositoryIdentity<>);
             var repositoryInstance = Activator.CreateInstance(repositoryType.MakeGenericType(typeof(T)), _context)
                 ?? throw new InvalidOperationException("Error al crear la instancia del repositorio");
-                
+
             _repositories.Add(type, repositoryInstance);
         }
 
