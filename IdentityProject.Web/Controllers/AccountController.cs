@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using IdentityProject.Common.Dto;
+using System.Security.Claims;
 
 namespace IdentityProject.Web.Controllers;
 
@@ -296,18 +297,18 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         {
             try
             {
-                var identityUser = await _accountIdentityManager.FindByEmailAsync(viewModel.Email!);
-                if (identityUser is null)
+                var userId = await _accountIdentityManager.FindByEmailAsync(viewModel.Email!);
+                if (userId is null)
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                     return View(viewModel);
                 }
 
-                var identityResult = await _accountIdentityManager.ResetPasswordAsync(identityUser, viewModel.Code!, viewModel.Password!);
+                var identityResult = await _accountIdentityManager.ResetPasswordAsync(userId, viewModel.Code!, viewModel.Password!);
                 if (identityResult.Succeeded)
                     return RedirectToAction(nameof(ResetPasswordConfirmation));
 
-                _errorController.HandleErrors(identityResult);
+                _errorController.HandleErrors(identityResult.Errors);
             }
             catch (Exception ex)
             {
@@ -372,15 +373,16 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
-            var identityResult = await _accountIdentityManager.ResetAuthenticatorKeyAsync(identityUser);
-            if (!identityResult.Succeeded)
+            var userId = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+            var resultDto = await _accountIdentityManager.ResetAuthenticatorKeyAsync(userId);
+            if (!resultDto.Succeeded)
                 throw new InvalidOperationException("No se pudo restablecer la clave de autenticación");
 
-            string? token = await _accountIdentityManager.GetAuthenticatorKeyAsync(identityUser) ?? throw new InvalidOperationException("La clave de autenticación no existe");
+            string? token = await _accountIdentityManager.GetAuthenticatorKeyAsync(userId) ?? throw new InvalidOperationException("La clave de autenticación no existe");
             // Create QR code
             string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
-            string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(identityUser.Email!), token);
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(email!), token);
 
             var viewModel = new TwoFactorAuthenticationViewModel() { Token = token, QrCodeUri = authenticatorUrl };
             return View(viewModel);
@@ -403,12 +405,12 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         {
             try
             {
-                var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+                var userId = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
 
-                bool isSucceeded = await _accountIdentityManager.VerifyTwoFactorTokenAsync(identityUser, viewModel.Code!);
+                bool isSucceeded = await _accountIdentityManager.VerifyTwoFactorTokenAsync(userId, viewModel.Code!);
                 if (isSucceeded)
                 {
-                    var identityResult = await _accountIdentityManager.SetTwoFactorEnabledAsync(identityUser, true);
+                    var identityResult = await _accountIdentityManager.SetTwoFactorEnabledAsync(userId, true);
                     if (!identityResult.Succeeded)
                         throw new InvalidOperationException("No se pudo habilitar la autenticación de dos factores");
 
@@ -442,12 +444,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         try
         {
             // Gets the user who is in the process of two-factor authentication. If the user does not exist, an exception is thrown.
-            var identityUser = await _accountIdentityManager.GetTwoFactorAuthenticationUserAsync()
-                ?? throw new InvalidOperationException("El usuario no está en proceso de autenticación de dos factores.");
-        }
-        catch (InvalidOperationException ex)
-        {
-            return _errorController.HandleException(ex, nameof(VerifyAuthenticatorCode), "El usuario no está en proceso de autenticación de dos factores.");
+            await _accountIdentityManager.GetTwoFactorAuthenticationUserAsync();
         }
         catch (Exception ex)
         {
@@ -462,29 +459,24 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     public async Task<IActionResult> VerifyAuthenticatorCode(VerifyAuthenticatorCodeViewModel viewModel)
     {
         viewModel.ReturnUrl ??= Url.Content("~/");
-        Microsoft.AspNetCore.Identity.SignInResult? signInResult;
+        ResultDto signInResultDto;
 
         if (!ModelState.IsValid)
             return View(viewModel);
 
         try
         {
-            signInResult = await _accountIdentityManager.TwoFactorAuthenticatorSignInAsync(viewModel.Code!, viewModel.RememberMe, true)
-            ?? throw new InvalidOperationException("No se pudo validar el código de verificación.");
-        }
-        catch (InvalidOperationException ex)
-        {
-            return _errorController.HandleException(ex, nameof(VerifyAuthenticatorCode), "No se pudo validar el código de verificación.");
+            signInResultDto = await _accountIdentityManager.TwoFactorAuthenticatorSignInAsync(viewModel.Code!, viewModel.RememberMe, false);
         }
         catch (Exception ex)
         {
             return _errorController.HandleException(ex, nameof(VerifyAuthenticatorCode));
         }
 
-        if (signInResult.Succeeded)
+        if (signInResultDto.Succeeded)
             return LocalRedirect(viewModel.ReturnUrl);
 
-        else if (signInResult.IsLockedOut)
+        else if (signInResultDto.IsLockedOut || signInResultDto.IsNotAllowed)
             return View("AccountLocked");
 
         else
@@ -498,11 +490,11 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe.");
-            var identityResultReset = await _accountIdentityManager.ResetAuthenticatorKeyAsync(identityUser);
-            var identityResultSetTwoFactor = await _accountIdentityManager.SetTwoFactorEnabledAsync(identityUser, false);
+            var userId = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe.");
+            var resultReset = await _accountIdentityManager.ResetAuthenticatorKeyAsync(userId);
+            var resultSetTwoFactor = await _accountIdentityManager.SetTwoFactorEnabledAsync(userId, false);
 
-            if (!identityResultSetTwoFactor.Succeeded || !identityResultReset.Succeeded)
+            if (!resultSetTwoFactor.Succeeded || !resultReset.Succeeded)
                 throw new InvalidOperationException("No se pudo deshabilitar la autenticación de dos factores.");
         }
         catch (InvalidOperationException ex)

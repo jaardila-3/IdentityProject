@@ -49,11 +49,11 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             if (ModelState.IsValid)
             {
                 var userDto = viewModel.ToDto();
-                var identityResult = await _accountIdentityManager.UpdateUserAsync(userDto);
-                if (identityResult.Succeeded)
+                var resultDto = await _accountIdentityManager.UpdateUserAsync(userDto);
+                if (resultDto.Succeeded)
                     return RedirectToAction(nameof(HomeController.Index), "Home");
 
-                _errorController.HandleErrors(identityResult);
+                _errorController.HandleErrors(resultDto.Errors);
             }
 
             return View(viewModel);
@@ -77,13 +77,13 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         {
             if (ModelState.IsValid)
             {
-                var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
-                var token = await _accountIdentityManager.GeneratePasswordResetTokenAsync(identityUser);
-                var identityResult = await _accountIdentityManager.ResetPasswordAsync(identityUser, token, viewModel.Password!);
-                if (identityResult.Succeeded)
+                var userId = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+                var token = await _accountIdentityManager.GeneratePasswordResetTokenAsync(userId);
+                var resultDto = await _accountIdentityManager.ResetPasswordAsync(userId, token, viewModel.Password!);
+                if (resultDto.Succeeded)
                     return RedirectToAction(nameof(ConfirmationChangePassword));
 
-                _errorController.HandleErrors(identityResult);
+                _errorController.HandleErrors(resultDto.Errors);
             }
 
             return View(viewModel);
@@ -108,13 +108,8 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     {
         try
         {
-            var identityUser = await _accountIdentityManager.GetUserAsync(User);
-
-            if (identityUser is null)
-                ViewData["IsTwoFactorAuthenticationActive"] = false;
-            else
-                ViewData["IsTwoFactorAuthenticationActive"] = identityUser.TwoFactorEnabled;
-
+            var isTwoFactorEnabled = await _accountIdentityManager.IsTwoFactorEnabled(User);
+            ViewData["IsTwoFactorAuthenticationActive"] = isTwoFactorEnabled;
             return View();
         }
         catch (Exception ex)

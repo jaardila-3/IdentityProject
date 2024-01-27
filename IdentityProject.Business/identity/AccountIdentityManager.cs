@@ -33,8 +33,6 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return identityResult.ToApplicationResult();
     }
 
-    public async Task<IdentityUser?> FindByIdAsync(string userId) => await _userManager.FindByIdAsync(userId);
-
     public async Task<string> GenerateEmailConfirmationTokenAsync(string userId)
     {
         var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
@@ -60,21 +58,56 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return await _userManager.GeneratePasswordResetTokenAsync(identityUser);
     }
 
-    public async Task<IdentityResult> ResetPasswordAsync(IdentityUser user, string token, string newPassword) => await _userManager.ResetPasswordAsync(user, token, newPassword);
-
-    public async Task<IdentityUser?> GetUserAsync(ClaimsPrincipal principal) => await _userManager.GetUserAsync(principal);
-
-    public async Task<IdentityResult> ResetAuthenticatorKeyAsync(IdentityUser user) => await _userManager.ResetAuthenticatorKeyAsync(user);
-
-    public async Task<string?> GetAuthenticatorKeyAsync(IdentityUser user) => await _userManager.GetAuthenticatorKeyAsync(user);
-
-    public async Task<bool> VerifyTwoFactorTokenAsync(IdentityUser user, string token) => await _userManager.VerifyTwoFactorTokenAsync(user, _userManager.Options.Tokens.AuthenticatorTokenProvider, token);
-
-    public async Task<IdentityResult> SetTwoFactorEnabledAsync(IdentityUser user, bool enabled) => await _userManager.SetTwoFactorEnabledAsync(user, enabled);
-
-    public async Task<IdentityResult> UpdateUserAsync(UserDto userDto)
+    public async Task<ResultDto> ResetPasswordAsync(string userId, string token, string newPassword)
     {
-        var identityUser = (AppUser?)await FindByIdAsync(userDto.Id!) ?? throw new InvalidOperationException("El usuario no existe");
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.ResetPasswordAsync(identityUser, token, newPassword);
+        return identityResult.ToApplicationResult();
+    }
+
+    public async Task<string?> GetUserAsync(ClaimsPrincipal principal)
+    {
+        var identityUser = await _userManager.GetUserAsync(principal);
+        return identityUser?.Id;
+    }
+
+    public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal)
+    {
+        bool isTwoFactorEnabled = false;
+        var identityUser = await _userManager.GetUserAsync(principal);
+        if (identityUser is not null) isTwoFactorEnabled = identityUser.TwoFactorEnabled;
+        return isTwoFactorEnabled;
+    }
+
+    public async Task<ResultDto> ResetAuthenticatorKeyAsync(string userId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
+        return identityResult.ToApplicationResult();
+    }
+
+    public async Task<string?> GetAuthenticatorKeyAsync(string userId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        return await _userManager.GetAuthenticatorKeyAsync(identityUser);
+    }
+
+    public async Task<bool> VerifyTwoFactorTokenAsync(string userId, string token)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        return await _userManager.VerifyTwoFactorTokenAsync(identityUser, _userManager.Options.Tokens.AuthenticatorTokenProvider, token);
+    }
+
+    public async Task<ResultDto> SetTwoFactorEnabledAsync(string userId, bool enabled)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
+        return identityResult.ToApplicationResult();
+    }
+
+    public async Task<ResultDto> UpdateUserAsync(UserDto userDto)
+    {
+        var identityUser = (AppUser?)await _userManager.FindByIdAsync(userDto.Id!) ?? throw new InvalidOperationException("El usuario no existe");
         identityUser.Name = userDto.Name;
         identityUser.Url = userDto.Url;
         identityUser.CountryCode = userDto.CountryCode;
@@ -83,7 +116,8 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         identityUser.City = userDto.City;
         identityUser.Address = userDto.Address;
         identityUser.Birthdate = userDto.Birthdate;
-        return await _userManager.UpdateAsync(identityUser);
+        var identityResult = await _userManager.UpdateAsync(identityUser);
+        return identityResult.ToApplicationResult();
     }
 
     public async Task DeleteUserAsync(string userId)
@@ -110,16 +144,28 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return signInResult.ToApplicationResult();
     }
 
-    public async Task<IdentityUser?> GetTwoFactorAuthenticationUserAsync() => await _signInManager.GetTwoFactorAuthenticationUserAsync();
+    public async Task GetTwoFactorAuthenticationUserAsync()
+    {
+        if (await _signInManager.GetTwoFactorAuthenticationUserAsync() is null)
+            throw new InvalidOperationException("El usuario no tiene dos factores de autenticación activado");
+    }
 
-    public async Task<SignInResult> TwoFactorAuthenticatorSignInAsync(string code, bool isPersistent, bool rememberClient)
-        => await _signInManager.TwoFactorAuthenticatorSignInAsync(code, isPersistent, rememberClient: rememberClient);
+    public async Task<ResultDto> TwoFactorAuthenticatorSignInAsync(string code, bool isPersistent, bool rememberClient)
+    {
+        var signInResult = await _signInManager.TwoFactorAuthenticatorSignInAsync(code, isPersistent, rememberClient: rememberClient)
+            ?? throw new InvalidOperationException("No se pudo validar el código de verificación.");
+        return signInResult.ToApplicationResult();
+    }
     #endregion
 
     #region Roles
     public async Task<bool> RoleExistsAsync(string roleName) => await _roleManager.RoleExistsAsync(roleName);
 
-    public async Task<IdentityResult> CreateRoleAsync(IdentityRole role) => await _roleManager.CreateAsync(role);
+    public async Task<ResultDto> CreateRoleAsync(IdentityRole role)
+    {
+        var identityResult = await _roleManager.CreateAsync(role);
+        return identityResult.ToApplicationResult();
+    }
 
     public async Task<List<string?>?> GetRolesAsync() => await _roleManager.Roles.Select(role => role.Name).ToListAsync() ?? [];
 

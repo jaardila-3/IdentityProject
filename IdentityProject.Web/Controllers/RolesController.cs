@@ -43,8 +43,12 @@ public class RolesController(IErrorController errorController, IRolesService rol
             if (await _accountIdentityManager.RoleExistsAsync(role.Name!))
                 return RedirectToAction(nameof(Index));
 
-            var identityResult = await _accountIdentityManager.CreateRoleAsync(new IdentityRole(role.Name!));
-            return RedirectToAction(nameof(Index));
+            var resultDto = await _accountIdentityManager.CreateRoleAsync(new IdentityRole(role.Name!));
+            if (resultDto.Succeeded)
+                return RedirectToAction(nameof(Index));
+
+            _errorController.HandleErrors(resultDto.Errors);
+            return View();
         }
         catch (Exception ex)
         {
