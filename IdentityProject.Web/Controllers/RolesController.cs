@@ -1,5 +1,5 @@
-using IdentityProject.Business.Interfaces.Features;
 using IdentityProject.Business.Interfaces.Identity;
+using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.Common.Enums;
 using IdentityProject.Web.Interfaces.Controllers;
 using Microsoft.AspNetCore.Authorization;
@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
 [Authorize(Roles = nameof(RoleType.Admin))]
-public class RolesController(IErrorController errorController, IRolesAccountManager rolesAccountManager, IIdentityManager identityManager) : Controller
+public class RolesController(IErrorController errorController, IRolesService rolesAccountManager, IAccountIdentityManager accountIdentityManager) : Controller
 {
     private readonly IErrorController _errorController = errorController;
-    private readonly IRolesAccountManager _rolesAccountManager = rolesAccountManager;
-    private readonly IIdentityManager _identityManager = identityManager;
+    private readonly IRolesService _rolesAccountManager = rolesAccountManager;
+    private readonly IAccountIdentityManager _accountIdentityManager = accountIdentityManager;
 
     [HttpGet]
     public async Task<IActionResult> Index()
@@ -40,10 +40,10 @@ public class RolesController(IErrorController errorController, IRolesAccountMana
     {
         try
         {
-            if (await _identityManager.RoleExistsAsync(role.Name!))
+            if (await _accountIdentityManager.RoleExistsAsync(role.Name!))
                 return RedirectToAction(nameof(Index));
 
-            var identityResult = await _identityManager.CreateRoleAsync(new IdentityRole(role.Name!));
+            var identityResult = await _accountIdentityManager.CreateRoleAsync(new IdentityRole(role.Name!));
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)

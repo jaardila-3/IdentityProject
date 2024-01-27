@@ -1,7 +1,7 @@
 using System.Diagnostics;
+using IdentityProject.Common.Dto;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
@@ -13,10 +13,10 @@ public class ErrorController(ILogger<ErrorController> logger, IHttpContextAccess
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
-    public void HandleErrors(IdentityResult result)
+    public void HandleErrors(IEnumerable<string> errors)
     {
-        foreach (var error in result.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
+        foreach (var error in errors)
+            ModelState.AddModelError(string.Empty, error);
     }
 
     public IActionResult HandleException(Exception ex, string method, string? optionalMessage = null)

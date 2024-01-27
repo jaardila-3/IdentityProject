@@ -1,8 +1,8 @@
-using IdentityProject.Business.Interfaces.Features;
+using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.DataAccess.Interfaces.Repositories;
 
-namespace IdentityProject.Business.Features.Roles;
-public class RolesAccountManager(IUnitOfWork unitOfWork) : IRolesAccountManager
+namespace IdentityProject.Business.Services.Roles;
+public class RolesService(IUnitOfWork unitOfWork) : IRolesService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 

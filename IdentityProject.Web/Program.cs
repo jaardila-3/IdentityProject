@@ -1,12 +1,7 @@
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Controllers;
 using IdentityProject.Business.identity;
-using IdentityProject.Business.Services;
 using IdentityProject.Business.Interfaces.Identity;
-using IdentityProject.Business.Interfaces.Services;
-using IdentityProject.Business.Interfaces.Features;
-using IdentityProject.Business.Features.Users;
-using IdentityProject.Business.Features.Roles;
 using IdentityProject.Services.SMTP.MailJet;
 using IdentityProject.DataAccess.Persistence;
 using IdentityProject.DataAccess.Interfaces.Repositories;
@@ -14,6 +9,12 @@ using IdentityProject.DataAccess.Repositories.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using IdentityProject.Business.Services.Email;
+using IdentityProject.Business.Interfaces.Services.Email;
+using IdentityProject.Business.Interfaces.Services.Roles;
+using IdentityProject.Business.Interfaces.Services.Users;
+using IdentityProject.Business.Services.Roles;
+using IdentityProject.Business.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,16 +60,16 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 //add IoC
 //Transient
-builder.Services.AddTransient<IIdentityManager, IdentityManager>();
+builder.Services.AddTransient<IAccountIdentityManager, AccountIdentityManager>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 //Scoped
 builder.Services.AddScoped<IErrorController, ErrorController>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWorkIdentity>();
 builder.Services.AddScoped(typeof(IRepositoryWriteCommands<>), typeof(RepositoryIdentity<>));
-builder.Services.AddScoped<IUserAccountManager, UserAccountManager>();
+builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IRolesRepository, RolesRepository>();
-builder.Services.AddScoped<IRolesAccountManager, RolesAccountManager>();
+builder.Services.AddScoped<IRolesService, RolesService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

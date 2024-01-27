@@ -9,31 +9,56 @@ using System.Security.Claims;
 
 namespace IdentityProject.Business.identity;
 
-public class IdentityManager(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, RoleManager<IdentityRole> roleManager) : IIdentityManager
+public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, RoleManager<IdentityRole> roleManager) : IAccountIdentityManager
 {
     private readonly UserManager<IdentityUser> _userManager = userManager;
     private readonly RoleManager<IdentityRole> _roleManager = roleManager;
     private readonly SignInManager<IdentityUser> _signInManager = signInManager;
 
     #region Users
-    public async Task<(IdentityResult, string)> CreateUserAsync(UserDto user, string password)
+    public async Task<(ResultDto result, string userId)> CreateUserAsync(UserDto user, string password)
     {
         var identityUser = user.ToDomain();
         var identityResult = await _userManager.CreateAsync(identityUser, password);
-        return (identityResult, identityUser.Id);
+        return (identityResult.ToApplicationResult(), identityUser.Id);
     }
 
-    public async Task<IdentityResult> AddToRoleAsync(IdentityUser user, string role) => await _userManager.AddToRoleAsync(user, role);
+    public async Task<ResultDto> AddUserToRoleAsync(string userId, string role)
+    {
+        if (!await _roleManager.RoleExistsAsync(role))
+            throw new InvalidOperationException("El rol no existe");
+
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.AddToRoleAsync(identityUser, role);
+        return identityResult.ToApplicationResult();
+    }
 
     public async Task<IdentityUser?> FindByIdAsync(string userId) => await _userManager.FindByIdAsync(userId);
 
-    public async Task<string> GenerateEmailConfirmationTokenAsync(IdentityUser user) => await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    public async Task<string> GenerateEmailConfirmationTokenAsync(string userId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        return await _userManager.GenerateEmailConfirmationTokenAsync(identityUser);
+    }
 
-    public async Task<IdentityResult> ConfirmEmailAsync(IdentityUser user, string token) => await _userManager.ConfirmEmailAsync(user, token);
+    public async Task<ResultDto> ConfirmEmailAsync(string userId, string token)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.ConfirmEmailAsync(identityUser, token);
+        return identityResult.ToApplicationResult();
+    }
 
-    public async Task<IdentityUser?> FindByEmailAsync(string email) => await _userManager.FindByEmailAsync(email);
+    public async Task<string?> FindByEmailAsync(string email)
+    {
+        var identityUser = await _userManager.FindByEmailAsync(email);
+        return identityUser?.Id;
+    }
 
-    public async Task<string> GeneratePasswordResetTokenAsync(IdentityUser user) => await _userManager.GeneratePasswordResetTokenAsync(user);
+    public async Task<string> GeneratePasswordResetTokenAsync(string userId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        return await _userManager.GeneratePasswordResetTokenAsync(identityUser);
+    }
 
     public async Task<IdentityResult> ResetPasswordAsync(IdentityUser user, string token, string newPassword) => await _userManager.ResetPasswordAsync(user, token, newPassword);
 
@@ -60,16 +85,30 @@ public class IdentityManager(UserManager<IdentityUser> userManager, SignInManage
         identityUser.Birthdate = userDto.Birthdate;
         return await _userManager.UpdateAsync(identityUser);
     }
+
+    public async Task DeleteUserAsync(string userId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        var identityResult = await _userManager.DeleteAsync(identityUser);
+        if (!identityResult.Succeeded) throw new InvalidOperationException("Usuario no pudo ser eliminado.");
+    }
     #endregion
 
     #region SignIn
-    public async Task SignInAsync(IdentityUser user, bool isPersistent, string? authenticationMethod = null)
-        => await _signInManager.SignInAsync(user, isPersistent: isPersistent);
+    public async Task SignInAsync(string userId, bool isPersistent, string? authenticationMethod = null)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
+        await _signInManager.SignInAsync(identityUser, isPersistent: isPersistent);
+    }
 
     public async Task SignOutAsync() => await _signInManager.SignOutAsync();
 
-    public async Task<SignInResult> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure)
-        => await _signInManager.PasswordSignInAsync(userName, password, isPersistent, lockoutOnFailure: lockoutOnFailure);
+    public async Task<ResultDto> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure)
+    {
+        var signInResult = await _signInManager.PasswordSignInAsync(userName, password, isPersistent, lockoutOnFailure: lockoutOnFailure)
+            ?? throw new InvalidOperationException("Credenciales incorrectas");
+        return signInResult.ToApplicationResult();
+    }
 
     public async Task<IdentityUser?> GetTwoFactorAuthenticationUserAsync() => await _signInManager.GetTwoFactorAuthenticationUserAsync();
 
@@ -82,16 +121,17 @@ public class IdentityManager(UserManager<IdentityUser> userManager, SignInManage
 
     public async Task<IdentityResult> CreateRoleAsync(IdentityRole role) => await _roleManager.CreateAsync(role);
 
-    public async Task<List<IdentityRole>?> GetRolesListAsync() => await _roleManager.Roles.ToListAsync();
+    public async Task<List<string?>?> GetRolesAsync() => await _roleManager.Roles.Select(role => role.Name).ToListAsync() ?? [];
+
     #endregion
 
     #region Helpers
     public async Task CreateRolesAsync()
     {
-        if (!await RoleExistsAsync(nameof(RoleType.RegisteredUser)))
+        if (!await _roleManager.RoleExistsAsync(nameof(RoleType.RegisteredUser)))
             await CreateRoleAsync(new IdentityRole(nameof(RoleType.RegisteredUser)));
 
-        if (!await RoleExistsAsync(nameof(RoleType.Admin)))
+        if (!await _roleManager.RoleExistsAsync(nameof(RoleType.Admin)))
             await CreateRoleAsync(new IdentityRole(nameof(RoleType.Admin)));
     }
     #endregion

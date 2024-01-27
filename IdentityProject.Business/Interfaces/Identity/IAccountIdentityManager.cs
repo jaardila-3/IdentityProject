@@ -4,16 +4,16 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IdentityProject.Business.Interfaces.Identity;
 
-public interface IIdentityManager
+public interface IAccountIdentityManager
 {
     #region Users
-    Task<(IdentityResult, string)> CreateUserAsync(UserDto user, string password);
-    Task<IdentityResult> AddToRoleAsync(IdentityUser user, string role);
+    Task<(ResultDto result, string userId)> CreateUserAsync(UserDto user, string password);
+    Task<ResultDto> AddUserToRoleAsync(string userId, string role);
     Task<IdentityUser?> FindByIdAsync(string userId);
-    Task<string> GenerateEmailConfirmationTokenAsync(IdentityUser user);
-    Task<IdentityResult> ConfirmEmailAsync(IdentityUser user, string token);
-    Task<IdentityUser?> FindByEmailAsync(string email);
-    Task<string> GeneratePasswordResetTokenAsync(IdentityUser user);
+    Task<string> GenerateEmailConfirmationTokenAsync(string userId);
+    Task<ResultDto> ConfirmEmailAsync(string userId, string token);
+    Task<string?> FindByEmailAsync(string email);
+    Task<string> GeneratePasswordResetTokenAsync(string userId);
     Task<IdentityResult> ResetPasswordAsync(IdentityUser user, string token, string newPassword);
     Task<IdentityUser?> GetUserAsync(ClaimsPrincipal principal);
     Task<IdentityResult> ResetAuthenticatorKeyAsync(IdentityUser user);
@@ -21,12 +21,13 @@ public interface IIdentityManager
     Task<bool> VerifyTwoFactorTokenAsync(IdentityUser user, string token);
     Task<IdentityResult> SetTwoFactorEnabledAsync(IdentityUser user, bool enabled);
     Task<IdentityResult> UpdateUserAsync(UserDto userDto);
+    Task DeleteUserAsync(string userId);
     #endregion
 
     #region SignIn
-    Task SignInAsync(IdentityUser user, bool isPersistent, string? authenticationMethod = null);
+    Task SignInAsync(string userId, bool isPersistent, string? authenticationMethod = null);
     Task SignOutAsync();
-    Task<SignInResult> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure);
+    Task<ResultDto> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure);
     Task<IdentityUser?> GetTwoFactorAuthenticationUserAsync();
     Task<SignInResult> TwoFactorAuthenticatorSignInAsync(string code, bool isPersistent, bool rememberClient);
     #endregion
@@ -34,7 +35,7 @@ public interface IIdentityManager
     #region Roles
     Task<bool> RoleExistsAsync(string roleName);
     Task<IdentityResult> CreateRoleAsync(IdentityRole role);
-    Task<List<IdentityRole>?> GetRolesListAsync();
+    Task<List<string?>?> GetRolesAsync();
     #endregion
 
     #region Helpers

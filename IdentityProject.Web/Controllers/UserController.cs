@@ -1,5 +1,5 @@
-using IdentityProject.Business.Interfaces.Features;
 using IdentityProject.Business.Interfaces.Identity;
+using IdentityProject.Business.Interfaces.Services.Users;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
 using IdentityProject.Web.Models.MapperExtensions;
@@ -7,13 +7,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
-
 [Authorize]
-public class UserController(IErrorController errorController, IIdentityManager identityManager, IUserAccountManager userAccountManager) : Controller
+public class UserController(IErrorController errorController, IAccountIdentityManager accountIdentityManager, IUsersService userAccountManager) : Controller
 {
     private readonly IErrorController _errorController = errorController;
-    private readonly IIdentityManager _identityManager = identityManager;
-    private readonly IUserAccountManager _userAccountManager = userAccountManager;
+    private readonly IAccountIdentityManager _accountIdentityManager = accountIdentityManager;
+    private readonly IUsersService _userAccountManager = userAccountManager;
 
     #region Edit profile
     [HttpGet]
@@ -50,7 +49,7 @@ public class UserController(IErrorController errorController, IIdentityManager i
             if (ModelState.IsValid)
             {
                 var userDto = viewModel.ToDto();
-                var identityResult = await _identityManager.UpdateUserAsync(userDto);
+                var identityResult = await _accountIdentityManager.UpdateUserAsync(userDto);
                 if (identityResult.Succeeded)
                     return RedirectToAction(nameof(HomeController.Index), "Home");
 
@@ -78,9 +77,9 @@ public class UserController(IErrorController errorController, IIdentityManager i
         {
             if (ModelState.IsValid)
             {
-                var identityUser = await _identityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
-                var token = await _identityManager.GeneratePasswordResetTokenAsync(identityUser);
-                var identityResult = await _identityManager.ResetPasswordAsync(identityUser, token, viewModel.Password!);
+                var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+                var token = await _accountIdentityManager.GeneratePasswordResetTokenAsync(identityUser);
+                var identityResult = await _accountIdentityManager.ResetPasswordAsync(identityUser, token, viewModel.Password!);
                 if (identityResult.Succeeded)
                     return RedirectToAction(nameof(ConfirmationChangePassword));
 
@@ -109,7 +108,7 @@ public class UserController(IErrorController errorController, IIdentityManager i
     {
         try
         {
-            var identityUser = await _identityManager.GetUserAsync(User);
+            var identityUser = await _accountIdentityManager.GetUserAsync(User);
 
             if (identityUser is null)
                 ViewData["IsTwoFactorAuthenticationActive"] = false;

@@ -2,23 +2,23 @@ using IdentityProject.Web.Models;
 using IdentityProject.Web.Models.MapperExtensions;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Business.Interfaces.Identity;
-using IdentityProject.Business.Interfaces.Services;
+using IdentityProject.Business.Interfaces.Services.Email;
 using IdentityProject.Common.Enums;
 using IdentityProject.Common.ExtensionMethods;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using IdentityProject.Common.Dto;
 
 namespace IdentityProject.Web.Controllers;
 
 [Authorize]
-public class AccountController(IErrorController errorController, IIdentityManager identityManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
+public class AccountController(IErrorController errorController, IAccountIdentityManager accountIdentityManager, IEmailService emailService, UrlEncoder urlEncoder) : Controller
 {
     private readonly IErrorController _errorController = errorController;
-    private readonly IIdentityManager _identityManager = identityManager;
+    private readonly IAccountIdentityManager _accountIdentityManager = accountIdentityManager;
     private readonly IEmailService _emailService = emailService;
     private readonly UrlEncoder _urlEncoder = urlEncoder;
 
@@ -29,7 +29,7 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         try
         {
-            await _identityManager.CreateRolesAsync();
+            await _accountIdentityManager.CreateRolesAsync();
         }
         catch (Exception ex)
         {
@@ -50,28 +50,22 @@ public class AccountController(IErrorController errorController, IIdentityManage
             {
                 viewModel.State = true;
                 var userToCreateDto = viewModel.ToDto();
-                var (identityResult, userId) = await _identityManager.CreateUserAsync(userToCreateDto, viewModel.Password!);
+                var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!);
 
-                if (identityResult.Succeeded)
+                if (resultDtoUsercreated.Succeeded)
                 {
-                    var identityUser = await _identityManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
-
-                    var identityResultAddRole = await _identityManager.AddToRoleAsync(identityUser, nameof(RoleType.RegisteredUser));
-                    if (!identityResultAddRole.Succeeded)
+                    var resultDtoRoleAdded = await _accountIdentityManager.AddUserToRoleAsync(userId, nameof(RoleType.RegisteredUser));
+                    if (resultDtoRoleAdded.Succeeded)
                     {
-                        _errorController.HandleErrors(identityResultAddRole);
-                        return View(viewModel);
+                        await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!);
+                        await _accountIdentityManager.SignInAsync(userId, false);
+                        return RedirectToAction(nameof(HomeController.Index), "Home");
                     }
-
-                    await SendEmailConfirmationRegisterAsync(identityUser, viewModel.Email!);
-                    await _identityManager.SignInAsync(identityUser, false);
-                    return RedirectToAction(nameof(HomeController.Index), "Home");
+                    await _accountIdentityManager.DeleteUserAsync(userId);
+                    _errorController.HandleErrors(resultDtoRoleAdded.Errors);
                 }
-                _errorController.HandleErrors(identityResult);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return _errorController.HandleException(ex, nameof(Register), "usuario no encontrado");
+                else
+                    _errorController.HandleErrors(resultDtoUsercreated.Errors);
             }
             catch (Exception ex)
             {
@@ -100,45 +94,44 @@ public class AccountController(IErrorController errorController, IIdentityManage
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RegisterAdmin(RegisterViewModel viewModel)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (ModelState.IsValid)
-            {
-                viewModel.State = true;
-                var userToCreateDto = viewModel.ToDto();
-                var (identityResult, userId) = await _identityManager.CreateUserAsync(userToCreateDto, viewModel.Password!);
-
-                if (identityResult.Succeeded)
-                {
-                    var identityUser = await _identityManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("Usuario no encontrado.");
-
-                    if (!string.IsNullOrEmpty(viewModel.SelectedRole) && await _identityManager.RoleExistsAsync(viewModel.SelectedRole!))
-                        await _identityManager.AddToRoleAsync(identityUser, viewModel.SelectedRole!);
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Rol no encontrado");
-                        viewModel.Roles = await GetRoleItemsAsync();
-                        return View(viewModel);
-                    }
-
-                    await SendEmailConfirmationRegisterAsync(identityUser, viewModel.Email!);
-                    return RedirectToAction(nameof(HomeController.Index), "Home");
-                }
-
-                _errorController.HandleErrors(identityResult);
-            }
-
             viewModel.Roles = await GetRoleItemsAsync();
             return View(viewModel);
         }
-        catch (InvalidOperationException ex)
+        if (string.IsNullOrEmpty(viewModel.SelectedRole))
         {
-            return _errorController.HandleException(ex, nameof(RegisterAdmin));
+            ModelState.AddModelError(string.Empty, "Debe seleccionar un rol");
+            viewModel.Roles = await GetRoleItemsAsync();
+            return View(viewModel);
+        }
+
+        try
+        {
+            viewModel.State = true;
+            var userToCreateDto = viewModel.ToDto();
+            var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!);
+
+            if (resultDtoUsercreated.Succeeded)
+            {
+                var resultDtoRoleAdded = await _accountIdentityManager.AddUserToRoleAsync(userId, viewModel.SelectedRole);
+                if (resultDtoRoleAdded.Succeeded)
+                {
+                    await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!);
+                    return RedirectToAction(nameof(HomeController.Index), "Home");
+                }
+                await _accountIdentityManager.DeleteUserAsync(userId);
+                _errorController.HandleErrors(resultDtoRoleAdded.Errors);
+            }
+            else
+                _errorController.HandleErrors(resultDtoUsercreated.Errors);
         }
         catch (Exception ex)
         {
             return _errorController.HandleException(ex, nameof(RegisterAdmin));
         }
+        viewModel.Roles = await GetRoleItemsAsync();
+        return View(viewModel);
     }
 
     [HttpGet]
@@ -147,12 +140,9 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         try
         {
-            var identityUser = await _identityManager.FindByIdAsync(userId ?? throw new ArgumentNullException(nameof(userId)))
-            ?? throw new InvalidOperationException("Usuario no encontrado.");
-
-            var identityResult = await _identityManager.ConfirmEmailAsync(identityUser, code ?? throw new ArgumentNullException(nameof(code)));
-            if (!identityResult.Succeeded)
-                throw new InvalidOperationException($"Error al confirmar el correo: {JsonSerializer.Serialize(identityResult.Errors)}");
+            var resultDto = await _accountIdentityManager.ConfirmEmailAsync(userId, code ?? throw new ArgumentNullException(nameof(code)));
+            if (!resultDto.Succeeded)
+                throw new InvalidOperationException($"Error al confirmar el correo: {JsonSerializer.Serialize(resultDto.Errors)}");
 
             return View(nameof(ConfirmEmail));
         }
@@ -187,32 +177,27 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         ViewData["ReturnUrl"] = returnUrl;
         returnUrl ??= Url.Content("~/");
-        Microsoft.AspNetCore.Identity.SignInResult? signInResult;
+        ResultDto signInResultDto;
 
         if (ModelState.IsValid)
         {
             try
             {
-                signInResult = await _identityManager.PasswordSignInAsync(viewModel.UserName!, viewModel.Password!, viewModel.RememberMe, true)
-                    ?? throw new InvalidOperationException("Error al iniciar sesión.");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return _errorController.HandleException(ex, nameof(Login), "Error al iniciar sesión.");
+                signInResultDto = await _accountIdentityManager.PasswordSignInAsync(viewModel.UserName!, viewModel.Password!, viewModel.RememberMe, true);
             }
             catch (Exception ex)
             {
                 return _errorController.HandleException(ex, nameof(Login));
             }
 
-            if (signInResult.Succeeded)
+            if (signInResultDto.Succeeded)
                 return LocalRedirect(returnUrl);
 
-            else if (signInResult.IsLockedOut)
+            else if (signInResultDto.IsLockedOut || signInResultDto.IsNotAllowed)
                 return View("AccountLocked");
 
             #region Two Factor Authentication
-            else if (signInResult.RequiresTwoFactor)
+            else if (signInResultDto.RequiresTwoFactor)
                 return RedirectToAction(nameof(VerifyAuthenticatorCode), new { returnUrl, viewModel.RememberMe });
             #endregion
             else
@@ -230,7 +215,7 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         try
         {
-            await _identityManager.SignOutAsync();
+            await _accountIdentityManager.SignOutAsync();
         }
         catch (Exception ex)
         {
@@ -254,14 +239,14 @@ public class AccountController(IErrorController errorController, IIdentityManage
         {
             try
             {
-                var identityUser = await _identityManager.FindByEmailAsync(viewModel.Email!);
-                if (identityUser is null)
+                var userId = await _accountIdentityManager.FindByEmailAsync(viewModel.Email!);
+                if (userId is null)
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                     return View(viewModel);
                 }
-                var code = await _identityManager.GeneratePasswordResetTokenAsync(identityUser);
-                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = identityUser.Id, code }, protocol: HttpContext.Request.Scheme);
+                var code = await _accountIdentityManager.GeneratePasswordResetTokenAsync(userId);
+                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId, code }, protocol: HttpContext.Request.Scheme);
 
                 var subject = "Recuperar contraseña - IdentityProject";
                 var bodyHtml = @$"<p>Estimado usuario,</p>
@@ -311,14 +296,14 @@ public class AccountController(IErrorController errorController, IIdentityManage
         {
             try
             {
-                var identityUser = await _identityManager.FindByEmailAsync(viewModel.Email!);
+                var identityUser = await _accountIdentityManager.FindByEmailAsync(viewModel.Email!);
                 if (identityUser is null)
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
                     return View(viewModel);
                 }
 
-                var identityResult = await _identityManager.ResetPasswordAsync(identityUser, viewModel.Code!, viewModel.Password!);
+                var identityResult = await _accountIdentityManager.ResetPasswordAsync(identityUser, viewModel.Code!, viewModel.Password!);
                 if (identityResult.Succeeded)
                     return RedirectToAction(nameof(ResetPasswordConfirmation));
 
@@ -340,12 +325,12 @@ public class AccountController(IErrorController errorController, IIdentityManage
     #region Helpers
     private async Task<List<SelectListItem>> GetRoleItemsAsync()
     {
-        var roles = await _identityManager.GetRolesListAsync() ?? [];
+        var roles = await _accountIdentityManager.GetRolesAsync() ?? [];
         List<SelectListItem> roleItems = [];
 
         foreach (var role in roles)
         {
-            if (Enum.TryParse<RoleType>(role.Name!, out var roleType))
+            if (Enum.TryParse<RoleType>(role, out var roleType))
             {
                 roleItems.Add(new SelectListItem()
                 {
@@ -357,10 +342,10 @@ public class AccountController(IErrorController errorController, IIdentityManage
         return roleItems;
     }
 
-    private async Task SendEmailConfirmationRegisterAsync(IdentityUser user, string email)
+    private async Task SendEmailConfirmationRegisterAsync(string userId, string email)
     {
-        var token = await _identityManager.GenerateEmailConfirmationTokenAsync(user);
-        var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, code = token }, protocol: HttpContext.Request.Scheme);
+        var token = await _accountIdentityManager.GenerateEmailConfirmationTokenAsync(userId);
+        var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId, code = token }, protocol: HttpContext.Request.Scheme);
         var subject = "Confirmar su cuenta de IdentityProject";
         var bodyHtml = @$"<p>Hola,</p>
                     <p>Usted ha sido registrado en IdentityProject. Estamos encantados de tenerle como usuario.</p>
@@ -387,12 +372,12 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         try
         {
-            var identityUser = await _identityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
-            var identityResult = await _identityManager.ResetAuthenticatorKeyAsync(identityUser);
+            var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+            var identityResult = await _accountIdentityManager.ResetAuthenticatorKeyAsync(identityUser);
             if (!identityResult.Succeeded)
                 throw new InvalidOperationException("No se pudo restablecer la clave de autenticación");
 
-            string? token = await _identityManager.GetAuthenticatorKeyAsync(identityUser) ?? throw new InvalidOperationException("La clave de autenticación no existe");
+            string? token = await _accountIdentityManager.GetAuthenticatorKeyAsync(identityUser) ?? throw new InvalidOperationException("La clave de autenticación no existe");
             // Create QR code
             string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
             string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(identityUser.Email!), token);
@@ -418,12 +403,12 @@ public class AccountController(IErrorController errorController, IIdentityManage
         {
             try
             {
-                var identityUser = await _identityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
+                var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
 
-                bool isSucceeded = await _identityManager.VerifyTwoFactorTokenAsync(identityUser, viewModel.Code!);
+                bool isSucceeded = await _accountIdentityManager.VerifyTwoFactorTokenAsync(identityUser, viewModel.Code!);
                 if (isSucceeded)
                 {
-                    var identityResult = await _identityManager.SetTwoFactorEnabledAsync(identityUser, true);
+                    var identityResult = await _accountIdentityManager.SetTwoFactorEnabledAsync(identityUser, true);
                     if (!identityResult.Succeeded)
                         throw new InvalidOperationException("No se pudo habilitar la autenticación de dos factores");
 
@@ -457,7 +442,7 @@ public class AccountController(IErrorController errorController, IIdentityManage
         try
         {
             // Gets the user who is in the process of two-factor authentication. If the user does not exist, an exception is thrown.
-            var identityUser = await _identityManager.GetTwoFactorAuthenticationUserAsync()
+            var identityUser = await _accountIdentityManager.GetTwoFactorAuthenticationUserAsync()
                 ?? throw new InvalidOperationException("El usuario no está en proceso de autenticación de dos factores.");
         }
         catch (InvalidOperationException ex)
@@ -484,7 +469,7 @@ public class AccountController(IErrorController errorController, IIdentityManage
 
         try
         {
-            signInResult = await _identityManager.TwoFactorAuthenticatorSignInAsync(viewModel.Code!, viewModel.RememberMe, true)
+            signInResult = await _accountIdentityManager.TwoFactorAuthenticatorSignInAsync(viewModel.Code!, viewModel.RememberMe, true)
             ?? throw new InvalidOperationException("No se pudo validar el código de verificación.");
         }
         catch (InvalidOperationException ex)
@@ -513,9 +498,9 @@ public class AccountController(IErrorController errorController, IIdentityManage
     {
         try
         {
-            var identityUser = await _identityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe.");
-            var identityResultReset = await _identityManager.ResetAuthenticatorKeyAsync(identityUser);
-            var identityResultSetTwoFactor = await _identityManager.SetTwoFactorEnabledAsync(identityUser, false);
+            var identityUser = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe.");
+            var identityResultReset = await _accountIdentityManager.ResetAuthenticatorKeyAsync(identityUser);
+            var identityResultSetTwoFactor = await _accountIdentityManager.SetTwoFactorEnabledAsync(identityUser, false);
 
             if (!identityResultSetTwoFactor.Succeeded || !identityResultReset.Succeeded)
                 throw new InvalidOperationException("No se pudo deshabilitar la autenticación de dos factores.");
