@@ -6,26 +6,21 @@ namespace IdentityProject.Business.Interfaces.Identity;
 
 public interface IAccountIdentityManager
 {
-    #region Users
-    Task<(ResultDto result, string userId)> CreateUserAsync(UserDto user, string password);
-    Task<ResultDto> AddUserToRoleAsync(string userId, string role);
+    #region Register
+    Task<(ResultDto result, string userId)> CreateUserAsync(UserDto user, string password, string roleName, bool autoSignIn = true);
     Task<string> GenerateEmailConfirmationTokenAsync(string userId);
-    Task<ResultDto> ConfirmEmailAsync(string userId, string token);
-    Task<string?> FindByEmailAsync(string email);
+    Task ConfirmEmailAsync(string userId, string token);
+    #endregion
+
+    #region UserManager
     Task<string> GeneratePasswordResetTokenAsync(string userId);
     Task<ResultDto> ResetPasswordAsync(string userId, string token, string newPassword);
     Task<string?> GetUserAsync(ClaimsPrincipal principal);
     Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal);
-    Task<ResultDto> ResetAuthenticatorKeyAsync(string userId);
-    Task<string?> GetAuthenticatorKeyAsync(string userId);
-    Task<bool> VerifyTwoFactorTokenAsync(string userId, string token);
-    Task<ResultDto> SetTwoFactorEnabledAsync(string userId, bool enabled);
     Task<ResultDto> UpdateUserAsync(UserDto userDto);
-    Task DeleteUserAsync(string userId);
     #endregion
 
     #region SignIn
-    Task SignInAsync(string userId, bool isPersistent, string? authenticationMethod = null);
     Task SignOutAsync();
     Task<ResultDto> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure);
     Task GetTwoFactorAuthenticationUserAsync();
@@ -40,5 +35,16 @@ public interface IAccountIdentityManager
 
     #region Helpers
     Task CreateRolesAsync();
+    #endregion
+
+    #region Two Factor Authentication
+    Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal User);
+    Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode);
+    Task DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim);
+    #endregion
+
+    #region Forgot Password
+    Task<(string userId, string token)> GeneratePasswordResetToken(string email);
+    Task<ResultDto> ResetPassword(string email, string token, string newPassword);
     #endregion
 }

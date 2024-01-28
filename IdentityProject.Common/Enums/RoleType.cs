@@ -7,6 +7,6 @@ namespace IdentityProject.Common.Enums
         [Description("Administrador")]
         Admin,
         [Description("Usuario registrado")]
-        RegisteredUser
+        Usuario_Registrado
     }
 }
