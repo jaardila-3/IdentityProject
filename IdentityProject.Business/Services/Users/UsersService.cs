@@ -1,3 +1,4 @@
+using IdentityProject.Business.Exceptions;
 using IdentityProject.Business.Interfaces.Services.Users;
 using IdentityProject.Common.Dto;
 using IdentityProject.Common.Mapper.MapperExtensions;
@@ -12,7 +13,7 @@ public class UsersService(IUnitOfWork unitOfWork) : IUsersService
     public async Task<UserDto?> FindByIdAsync(string id)
     {
         var userEntity = await _unitOfWork.Repository<AppUser>()!.GetByIdAsync(id)
-            ?? throw new InvalidOperationException("El usuario no existe");
+            ?? throw new UserNotFoundException("Usuario no encontrado.");
 
         return userEntity.ToDto();
     }

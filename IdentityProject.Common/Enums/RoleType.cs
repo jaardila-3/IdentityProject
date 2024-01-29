@@ -9,4 +9,10 @@ namespace IdentityProject.Common.Enums
         [Description("Usuario registrado")]
         Usuario_Registrado
     }
+
+    public static class RoleTypeString
+    {
+        public static readonly string Admin = "Administrador";
+        public static readonly string Usuario_Registrado = "Usuario registrado";
+    }
 }

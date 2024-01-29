@@ -5,11 +5,11 @@ using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services.Email;
 using IdentityProject.Common.Enums;
 using IdentityProject.Common.ExtensionMethods;
+using IdentityProject.Common.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Encodings.Web;
-using IdentityProject.Common.Dto;
 
 namespace IdentityProject.Web.Controllers;
 [Authorize]
@@ -27,7 +27,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            await _accountIdentityManager.CreateRolesAsync();
+            await _accountIdentityManager.SetupRolesAsync();
         }
         catch (Exception ex)
         {
@@ -70,7 +70,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            // await _identityManager.CreateRolesAsync();
+            await _accountIdentityManager.SetupRolesAsync();
             RegisterViewModel viewModel = new() { Roles = await GetRoleItemsAsync() };
             return View(viewModel);
         }
@@ -121,14 +121,14 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
-        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("El parámetro userId no debe estar vacío", nameof(userId));
-        if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("El parámetro token no debe estar vacío", nameof(token));
-
         try
         {
+            if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException("El parámetro userId no debe estar nulo o vacío", nameof(userId));
+            if (string.IsNullOrEmpty(token)) throw new ArgumentNullException("El parámetro token no debe estar nulo o vacío", nameof(token));
+
             await _accountIdentityManager.ConfirmEmailAsync(userId, token);
         }
-        catch (ArgumentException ex)
+        catch (ArgumentNullException ex)
         {
             return _errorController.HandleException(ex, nameof(ConfirmEmail), "Parámetro vacío");
         }
@@ -218,7 +218,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         {
             try
             {
-                var (userId, token) = await _accountIdentityManager.GeneratePasswordResetToken(viewModel.Email!);
+                var (userId, token) = await _accountIdentityManager.GeneratePasswordResetTokenAsync(viewModel.Email!);
                 if (string.IsNullOrEmpty(userId))
                 {
                     ModelState.AddModelError(string.Empty, "El correo no se encuentra registrado.");
@@ -256,9 +256,9 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            return string.IsNullOrEmpty(code) ? throw new ArgumentException(nameof(code)) : View();
+            return string.IsNullOrEmpty(code) ? throw new ArgumentNullException(nameof(code)) : View();
         }
-        catch (ArgumentException ex)
+        catch (ArgumentNullException ex)
         {
             return _errorController.HandleException(ex, nameof(ResetPassword), "código nulo o vacío");
         }
@@ -273,7 +273,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         {
             try
             {
-                var resetPasswordResult = await _accountIdentityManager.ResetPassword(viewModel.Email!, viewModel.Code!, viewModel.Password!);
+                var resetPasswordResult = await _accountIdentityManager.ResetPasswordAsync(viewModel.Email!, viewModel.Code!, viewModel.Password!);
                 if (resetPasswordResult.Succeeded) return RedirectToAction(nameof(ResetPasswordConfirmation));
                 _errorController.HandleErrors(resetPasswordResult.Errors);
             }
@@ -374,7 +374,6 @@ public class AccountController(IErrorController errorController, IAccountIdentit
                 return RedirectToAction(nameof(AuthenticatorConfirmation));
 
             ModelState.AddModelError(string.Empty, "La autenticación de dos factores no ha sido validada correctamente.");
-            return View(viewModel);
         }
         return View(viewModel);
     }

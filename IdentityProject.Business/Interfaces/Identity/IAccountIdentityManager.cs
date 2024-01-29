@@ -12,11 +12,7 @@ public interface IAccountIdentityManager
     Task ConfirmEmailAsync(string userId, string token);
     #endregion
 
-    #region UserManager
-    Task<string> GeneratePasswordResetTokenAsync(string userId);
-    Task<ResultDto> ResetPasswordAsync(string userId, string token, string newPassword);
-    Task<string?> GetUserAsync(ClaimsPrincipal principal);
-    Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal);
+    #region Users
     Task<ResultDto> UpdateUserAsync(UserDto userDto);
     #endregion
 
@@ -28,23 +24,21 @@ public interface IAccountIdentityManager
     #endregion
 
     #region Roles
-    Task<bool> RoleExistsAsync(string roleName);
-    Task<ResultDto> CreateRoleAsync(IdentityRole role);
+    Task<ResultDto> CreateRoleAsync(string roleName);
     Task<List<string?>?> GetRolesAsync();
-    #endregion
-
-    #region Helpers
-    Task CreateRolesAsync();
-    #endregion
+    Task SetupRolesAsync();
+    #endregion    
 
     #region Two Factor Authentication
     Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal User);
     Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode);
     Task DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim);
+    Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal);
     #endregion
 
-    #region Forgot Password
-    Task<(string userId, string token)> GeneratePasswordResetToken(string email);
-    Task<ResultDto> ResetPassword(string email, string token, string newPassword);
+    #region Forgot and change Password
+    Task<(string userId, string token)> GeneratePasswordResetTokenAsync(string email);
+    Task<ResultDto> ResetPasswordAsync(string email, string token, string newPassword);
+    Task<ResultDto> ChangePasswordAsync(ClaimsPrincipal UserClaim, string newPassword);
     #endregion
 }

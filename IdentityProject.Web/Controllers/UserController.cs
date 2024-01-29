@@ -20,19 +20,16 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     {
         try
         {
-            var userDto = await _userAccountManager.FindByIdAsync(id ?? throw new ArgumentNullException(nameof(id)))
-                ?? throw new InvalidOperationException("El usuario no existe");
+            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException("El parámetro id no debe estar nulo o vacío", nameof(id));
 
-            var viewModel = userDto.ToViewModel();
+            var userDto = await _userAccountManager.FindByIdAsync(id);
+
+            var viewModel = userDto!.ToViewModel();
             return View(viewModel);
         }
         catch (ArgumentNullException ex)
         {
             return _errorController.HandleException(ex, nameof(EditProfile), "id nulo");
-        }
-        catch (InvalidOperationException ex)
-        {
-            return _errorController.HandleException(ex, nameof(EditProfile), "usuario no encontrado");
         }
         catch (Exception ex)
         {
@@ -44,24 +41,23 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProfile(EditProfileViewModel viewModel)
     {
-        try
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
                 var userDto = viewModel.ToDto();
-                var resultDto = await _accountIdentityManager.UpdateUserAsync(userDto);
-                if (resultDto.Succeeded)
+                var updateUserResult = await _accountIdentityManager.UpdateUserAsync(userDto);
+                if (updateUserResult.Succeeded)
                     return RedirectToAction(nameof(HomeController.Index), "Home");
 
-                _errorController.HandleErrors(resultDto.Errors);
+                _errorController.HandleErrors(updateUserResult.Errors);
             }
-
-            return View(viewModel);
+            catch (Exception ex)
+            {
+                return _errorController.HandleException(ex, nameof(EditProfile));
+            }
         }
-        catch (Exception ex)
-        {
-            return _errorController.HandleException(ex, nameof(EditProfile));
-        }
+        return View(viewModel);
     }
     #endregion
 
@@ -73,29 +69,22 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(ChangePasswordViewModel viewModel)
     {
-        try
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                var userId = await _accountIdentityManager.GetUserAsync(User) ?? throw new InvalidOperationException("El usuario no existe");
-                var token = await _accountIdentityManager.GeneratePasswordResetTokenAsync(userId);
-                var resultDto = await _accountIdentityManager.ResetPasswordAsync(userId, token, viewModel.Password!);
-                if (resultDto.Succeeded)
+                var resetPasswordResult = await _accountIdentityManager.ChangePasswordAsync(User, viewModel.Password!);
+                if (resetPasswordResult.Succeeded)
                     return RedirectToAction(nameof(ConfirmationChangePassword));
 
-                _errorController.HandleErrors(resultDto.Errors);
+                _errorController.HandleErrors(resetPasswordResult.Errors);
             }
-
-            return View(viewModel);
+            catch (Exception ex)
+            {
+                return _errorController.HandleException(ex, nameof(ChangePassword));
+            }
         }
-        catch (InvalidOperationException ex)
-        {
-            return _errorController.HandleException(ex, nameof(ChangePassword), "usuario no encontrado");
-        }
-        catch (Exception ex)
-        {
-            return _errorController.HandleException(ex, nameof(ChangePassword));
-        }
+        return View(viewModel);
     }
 
     [HttpGet]
@@ -106,16 +95,17 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     [HttpGet]
     public async Task<IActionResult> Settings()
     {
+        bool isTwoFactorEnabled = false;
         try
         {
-            var isTwoFactorEnabled = await _accountIdentityManager.IsTwoFactorEnabled(User);
-            ViewData["IsTwoFactorAuthenticationActive"] = isTwoFactorEnabled;
-            return View();
+            isTwoFactorEnabled = await _accountIdentityManager.IsTwoFactorEnabled(User);
         }
         catch (Exception ex)
         {
             return _errorController.HandleException(ex, nameof(Settings));
         }
+        ViewData["IsTwoFactorAuthenticationActive"] = isTwoFactorEnabled;
+        return View();
     }
     #endregion
 }

@@ -52,34 +52,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     }
     #endregion
 
-    #region UserManager
-    public async Task<string> GeneratePasswordResetTokenAsync(string userId)
-    {
-        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new UserNotFoundException("Usuario no encontrado.");
-        return await _userManager.GeneratePasswordResetTokenAsync(identityUser);
-    }
-
-    public async Task<ResultDto> ResetPasswordAsync(string userId, string token, string newPassword)
-    {
-        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new UserNotFoundException("Usuario no encontrado.");
-        var identityResult = await _userManager.ResetPasswordAsync(identityUser, token, newPassword);
-        return identityResult.ToApplicationResult();
-    }
-
-    public async Task<string?> GetUserAsync(ClaimsPrincipal principal)
-    {
-        var identityUser = await _userManager.GetUserAsync(principal);
-        return identityUser?.Id;
-    }
-
-    public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal)
-    {
-        bool isTwoFactorEnabled = false;
-        var identityUser = await _userManager.GetUserAsync(principal);
-        if (identityUser is not null) isTwoFactorEnabled = identityUser.TwoFactorEnabled;
-        return isTwoFactorEnabled;
-    }
-
+    #region Users
     public async Task<ResultDto> UpdateUserAsync(UserDto userDto)
     {
         var identityUser = (AppUser?)await _userManager.FindByIdAsync(userDto.Id!) ?? throw new InvalidOperationException("El usuario no existe");
@@ -121,26 +94,22 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     #endregion
 
     #region Roles
-    public async Task<bool> RoleExistsAsync(string roleName) => await _roleManager.RoleExistsAsync(roleName);
-
-    public async Task<ResultDto> CreateRoleAsync(IdentityRole role)
+    public async Task<ResultDto> CreateRoleAsync(string roleName)
     {
-        var identityResult = await _roleManager.CreateAsync(role);
+        if (await _roleManager.RoleExistsAsync(roleName))
+        {
+            return ResultDto.Failure([$"El rol: {roleName}, ya existe en el sistema"]);
+        }
+        var identityResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
         return identityResult.ToApplicationResult();
     }
 
     public async Task<List<string?>?> GetRolesAsync() => await _roleManager.Roles.Select(role => role.Name).ToListAsync() ?? [];
 
-    #endregion
-
-    #region Helpers
-    public async Task CreateRolesAsync()
+    public async Task SetupRolesAsync()
     {
-        if (!await _roleManager.RoleExistsAsync(nameof(RoleType.Usuario_Registrado)))
-            await CreateRoleAsync(new IdentityRole(nameof(RoleType.Usuario_Registrado)));
-
-        if (!await _roleManager.RoleExistsAsync(nameof(RoleType.Admin)))
-            await CreateRoleAsync(new IdentityRole(nameof(RoleType.Admin)));
+        await CreateRoleAsync(nameof(RoleType.Usuario_Registrado));
+        await CreateRoleAsync(nameof(RoleType.Admin));
     }
     #endregion
 
@@ -192,10 +161,18 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         if (!resultResetAuthenticatorKey.Succeeded || !resultTwoFactorDisable.Succeeded)
             throw new AuthenticationFailedException("No se pudo deshabilitar la autenticación de dos factores.");
     }
+
+    public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal UserClaim)
+    {
+        bool isTwoFactorEnabled = false;
+        var identityUser = await _userManager.GetUserAsync(UserClaim);
+        if (identityUser is not null) isTwoFactorEnabled = identityUser.TwoFactorEnabled;
+        return isTwoFactorEnabled;
+    }
     #endregion
 
-    #region Forgot Password
-    public async Task<(string userId, string token)> GeneratePasswordResetToken(string email)
+    #region Forgot and change Password
+    public async Task<(string userId, string token)> GeneratePasswordResetTokenAsync(string email)
     {
         var identityUser = await _userManager.FindByEmailAsync(email);
         if (identityUser is null) return (string.Empty, string.Empty);
@@ -206,7 +183,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return (identityUser.Id, token);
     }
 
-    public async Task<ResultDto> ResetPassword(string email, string token, string newPassword)
+    public async Task<ResultDto> ResetPasswordAsync(string email, string token, string newPassword)
     {
         var identityUser = await _userManager.FindByEmailAsync(email);
         if (identityUser is null) return ResultDto.Failure(["El usuario no existe"]);
@@ -215,5 +192,13 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         if (resetPasswordResult is null) return ResultDto.Failure(["La contraseña no se pudo restablecer"]);
         return resetPasswordResult.ToApplicationResult();
     }
-    #endregion
+
+    public async Task<ResultDto> ChangePasswordAsync(ClaimsPrincipal UserClaim, string newPassword)
+    {
+        var identityUser = await _userManager.GetUserAsync(UserClaim) ?? throw new UserNotFoundException("El usuario no existe");
+        var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser) ?? throw new TokenGenerationFailedException("No se pudo generar el token de restablecimiento de la contraseña");
+        var resetPasswordResult = await _userManager.ResetPasswordAsync(identityUser, token, newPassword);
+        return resetPasswordResult.ToApplicationResult();
+    }
+    #endregion    
 }

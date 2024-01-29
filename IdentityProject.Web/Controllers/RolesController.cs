@@ -2,8 +2,8 @@ using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.Common.Enums;
 using IdentityProject.Web.Interfaces.Controllers;
+using IdentityProject.Web.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
@@ -17,42 +17,37 @@ public class RolesController(IErrorController errorController, IRolesService rol
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var roles = new List<Microsoft.AspNetCore.Identity.IdentityRole>();
         try
         {
-            roles = await _rolesAccountManager.GetListAsync();
+            var roles = await _rolesAccountManager.GetListAsync() ?? [];
+            var viewModel = roles.Select(r => new RoleViewModel { Id = r.Id, Name = r.Name }).ToList();
+            return View(viewModel);
         }
         catch (Exception ex)
         {
             return _errorController.HandleException(ex, nameof(Index));
         }
-        return View(roles);
     }
 
     [HttpGet]
-    public IActionResult Create()
-    {
-        return View();
-    }
+    public IActionResult Create() => View();
 
     [HttpPost]
-    public async Task<IActionResult> Create(IdentityRole role)
+    public async Task<IActionResult> Create(RoleViewModel viewModel)
     {
+        if (!ModelState.IsValid) return View(viewModel);
         try
         {
-            if (await _accountIdentityManager.RoleExistsAsync(role.Name!))
+            var createRoleResult = await _accountIdentityManager.CreateRoleAsync(viewModel.Name!);
+            if (createRoleResult.Succeeded)
                 return RedirectToAction(nameof(Index));
 
-            var resultDto = await _accountIdentityManager.CreateRoleAsync(new IdentityRole(role.Name!));
-            if (resultDto.Succeeded)
-                return RedirectToAction(nameof(Index));
-
-            _errorController.HandleErrors(resultDto.Errors);
-            return View();
+            _errorController.HandleErrors(createRoleResult.Errors);
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Index));
+            return _errorController.HandleException(ex, nameof(Create));
         }
+        return View(viewModel);
     }
 }
