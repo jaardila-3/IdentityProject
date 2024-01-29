@@ -32,6 +32,7 @@ In this project, I created a new application using the technology of **ASP.NET I
 ### For migrations with Code First
 
 - dotnet ef migrations add <name-new-migration>
+- dotnet ef migrations remove
 - dotnet ef database update
 
 ## Fonts for QR code

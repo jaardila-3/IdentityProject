@@ -1,31 +1,14 @@
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Controllers;
-using IdentityProject.Business.identity;
-using IdentityProject.Business.Interfaces.Identity;
-using IdentityProject.Services.SMTP.MailJet;
-using IdentityProject.DataAccess.Persistence;
-using IdentityProject.DataAccess.Interfaces.Repositories;
-using IdentityProject.DataAccess.Repositories.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using IdentityProject.Business.Services.Email;
-using IdentityProject.Business.Interfaces.Services.Email;
-using IdentityProject.Business.Interfaces.Services.Roles;
-using IdentityProject.Business.Interfaces.Services.Users;
-using IdentityProject.Business.Services.Roles;
-using IdentityProject.Business.Services.Users;
+using IdentityProject.Business;
+using IdentityProject.Services;
+using IdentityProject.DataAccess;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("IdentityProject.Web"))); // this line is to Add Migrations in this project
-                                                            // trustServerCertificate=true; this line in connection string is to resolve the trust server certificate error
-
-//add identity service
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+builder.Services.AddDataAccessServices(builder.Configuration);
+builder.Services.AddBusinessServices();
+builder.Services.AddServices();
 
 //configuration application cookie
 builder.Services.ConfigureApplicationCookie(options =>
@@ -33,43 +16,14 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Cookie settings
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
-
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.SlidingExpiration = true;
 });
 
-//configuration options for identity
-builder.Services.Configure<IdentityOptions>(options =>
-{
-    // Password settings.
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequiredLength = 8;
-    options.Password.RequiredUniqueChars = 1;
-    //lockout settings.
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(60);
-    options.Lockout.MaxFailedAccessAttempts = 3;
-    options.Lockout.AllowedForNewUsers = true;
-    // User settings.
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-    options.User.RequireUniqueEmail = true;
-});
-
 //add IoC
-//Transient
-builder.Services.AddTransient<IAccountIdentityManager, AccountIdentityManager>();
-builder.Services.AddTransient<IEmailService, EmailService>();
-builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();
 //Scoped
 builder.Services.AddScoped<IErrorController, ErrorController>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWorkIdentity>();
-builder.Services.AddScoped(typeof(IRepositoryWriteCommands<>), typeof(RepositoryIdentity<>));
-builder.Services.AddScoped<IUsersService, UsersService>();
-builder.Services.AddScoped<IRolesRepository, RolesRepository>();
-builder.Services.AddScoped<IRolesService, RolesService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
