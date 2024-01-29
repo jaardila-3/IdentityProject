@@ -12,7 +12,7 @@ public static class DependencyInjectionRegistration
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, b => b.MigrationsAssembly("IdentityProject.Web"))); // second parameter is to Add Migrations in this project trustServerCertificate=true; this line in connection string is to resolve the trust server certificate error
+        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, b => b.MigrationsAssembly("IdentityProject.DataAccess")));
 
         //add IoC
         //Scoped

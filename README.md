@@ -26,15 +26,18 @@ In this project, I created a new application using the technology of **ASP.NET I
 - dotnet add <file.csproj> reference <file.csproj>
 
 ### For execute the project
+
 - dotnet build
 - dotnet watch run --project <file.csproj>
 
 ### For migrations with Code First
 
 - dotnet ef migrations add <name-new-migration>
+- dotnet ef migrations add <name-new-migration> --project <path-name-project>
 - dotnet ef migrations remove
 - dotnet ef database update
 
 ## Fonts for QR code
+
 - https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
 - https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
