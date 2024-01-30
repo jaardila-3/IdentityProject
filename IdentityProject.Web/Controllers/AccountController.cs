@@ -52,10 +52,11 @@ public class AccountController(IErrorController errorController, IAccountIdentit
 
                 if (resultDtoUsercreated.Succeeded)
                 {
-                    await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!);
+                    if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                        Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
                     return RedirectToAction(nameof(HomeController.Index), "Home");
                 }
-                _errorController.HandleErrors(resultDtoUsercreated.Errors);
+                foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
             }
             catch (Exception ex)
             {
@@ -104,10 +105,11 @@ public class AccountController(IErrorController errorController, IAccountIdentit
 
             if (resultDtoUsercreated.Succeeded)
             {
-                await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!);
+                if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                    Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
-            _errorController.HandleErrors(resultDtoUsercreated.Errors);
+            foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
         }
         catch (Exception ex)
         {
@@ -275,7 +277,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             {
                 var resetPasswordResult = await _accountIdentityManager.ResetPasswordAsync(viewModel.Email!, viewModel.Code!, viewModel.Password!);
                 if (resetPasswordResult.Succeeded) return RedirectToAction(nameof(ResetPasswordConfirmation));
-                _errorController.HandleErrors(resetPasswordResult.Errors);
+                foreach (var error in resetPasswordResult.Errors) ModelState.AddModelError(string.Empty, error);
             }
             catch (Exception ex)
             {
@@ -310,9 +312,11 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         return roleItems;
     }
 
-    private async Task SendEmailConfirmationRegisterAsync(string userId, string email)
+    private async Task<bool> SendEmailConfirmationRegisterAsync(string userId, string email)
     {
         var token = await _accountIdentityManager.GenerateEmailConfirmationTokenAsync(userId);
+        if (string.IsNullOrEmpty(token)) return false;
+
         var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId, token }, protocol: HttpContext.Request.Scheme);
         var subject = "Confirmar su cuenta de IdentityProject";
         var bodyHtml = @$"<p>Hola,</p>
@@ -325,6 +329,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
                     <p>Saludos,</p>
                     <p>El equipo de IdentityProject</p>";
         await _emailService.SendEmailAsync(email, subject, bodyHtml);
+        return true;
     }
     #endregion
 

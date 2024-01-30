@@ -6,21 +6,16 @@ using Microsoft.Extensions.Configuration;
 
 namespace IdentityProject.Services.SMTP.MailJet
 {
-    public class MailJetEmailSender : IEmailSender
+    public class MailJetEmailSender(IConfiguration configuration) : IEmailSender
     {
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration _configuration = configuration;
         public MailJetOptions? _mailJetOptions;
-
-        public MailJetEmailSender(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
             _mailJetOptions = _configuration.GetSection("MailJet").Get<MailJetOptions>()!;
 
-            MailjetClient client = new (_mailJetOptions.ApiKey, _mailJetOptions.SecretKey)
+            MailjetClient client = new(_mailJetOptions.ApiKey, _mailJetOptions.SecretKey)
             {
                 Version = ApiVersion.V3_1,
             };
@@ -28,36 +23,30 @@ namespace IdentityProject.Services.SMTP.MailJet
             {
                 Resource = Send.Resource,
             }
-             .Property(Send.Messages, new JArray {
-     new JObject {
-      {
-       "From",
-       new JObject {
-        {"Email", _mailJetOptions.FromEmail},
-        {"Name", _mailJetOptions.FromName}
-       }
-      }, {
-       "To",
-       new JArray {
-        new JObject {
-         {
-          "Email",
-          email
-         }, {
-          "Name",
-          "Apreciado Cliente"
-         }
-        }
-       }
-      }, {
-       "Subject",
-       subject
-      }, {
-       "HTMLPart",
-       htmlMessage
-      }
-     }
-             });
+            .Property(Send.Messages, new JArray {
+                new JObject {
+                    {
+                        "From", new JObject {
+                                                {"Email", _mailJetOptions.FromEmail},
+                                                {"Name", _mailJetOptions.FromName}
+                                            }
+                    },
+                    {
+                        "To", new JArray { new JObject {
+                                                            { "Email", email },
+                                                            { "Name", "Apreciado Cliente" }
+                                                        }
+                                        }
+                    },
+                    {
+                        "Subject", subject
+                    },
+                    {
+                        "HTMLPart", htmlMessage
+                    }
+                }
+            });
+
             MailjetResponse response = await client.PostAsync(request);
             if (response.IsSuccessStatusCode)
             {
@@ -70,6 +59,7 @@ namespace IdentityProject.Services.SMTP.MailJet
                 Console.WriteLine(string.Format("ErrorInfo: {0}\n", response.GetErrorInfo()));
                 Console.WriteLine(response.GetData());
                 Console.WriteLine(string.Format("ErrorMessage: {0}\n", response.GetErrorMessage()));
+                Console.Error.WriteLine("No se pudo enviar el email de confirmación por error de MailJet.");
             }
         }
 

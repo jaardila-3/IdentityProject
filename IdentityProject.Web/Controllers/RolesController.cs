@@ -42,7 +42,7 @@ public class RolesController(IErrorController errorController, IRolesService rol
             if (createRoleResult.Succeeded)
                 return RedirectToAction(nameof(Index));
 
-            _errorController.HandleErrors(createRoleResult.Errors);
+            foreach (var error in createRoleResult.Errors) ModelState.AddModelError(string.Empty, error);
         }
         catch (Exception ex)
         {

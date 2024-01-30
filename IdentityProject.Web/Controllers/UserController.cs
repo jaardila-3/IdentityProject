@@ -50,7 +50,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
                 if (updateUserResult.Succeeded)
                     return RedirectToAction(nameof(HomeController.Index), "Home");
 
-                _errorController.HandleErrors(updateUserResult.Errors);
+                foreach (var error in updateUserResult.Errors) ModelState.AddModelError(string.Empty, error);
             }
             catch (Exception ex)
             {
@@ -77,7 +77,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
                 if (resetPasswordResult.Succeeded)
                     return RedirectToAction(nameof(ConfirmationChangePassword));
 
-                _errorController.HandleErrors(resetPasswordResult.Errors);
+                foreach (var error in resetPasswordResult.Errors) ModelState.AddModelError(string.Empty, error);
             }
             catch (Exception ex)
             {
