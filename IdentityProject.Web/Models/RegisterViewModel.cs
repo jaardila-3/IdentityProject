@@ -30,6 +30,7 @@ namespace IdentityProject.Web.Models
 
         [Required(ErrorMessage = "El {0} es obligatorio")]
         [StringLength(50, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 7)]
+        [RegularExpression(@"^[a-zA-Z0-9\u00E0-\u00FC ]+$", ErrorMessage = "{0} solo puede contener letras y números.")]
         [DataType(DataType.Text)]
         [Display(Name = "Nombre")]
         public string? Name { get; set; }
@@ -44,22 +45,26 @@ namespace IdentityProject.Web.Models
         public int? CountryCode { get; set; }
 
         [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]
+        [RegularExpression(@"^[0-9 +()]+$", ErrorMessage = "{0} solo puede contener caracteres válidos.")]
         [DataType(DataType.PhoneNumber)]
         [Display(Name = "Teléfono")]
         public string? PhoneNumber { get; set; }
 
         [Required(ErrorMessage = "El {0} es obligatorio")]
-        [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 3)]
+        [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 4)]
+        [RegularExpression(@"^[a-zA-Z0-9\u00E0-\u00FC ]+$", ErrorMessage = "{0} solo puede contener letras y números.")]
         [DataType(DataType.Text)]
         [Display(Name = "País")]
         public string? Country { get; set; }
 
-        [StringLength(30, ErrorMessage = "La {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 3)]
+        [StringLength(30, ErrorMessage = "La {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 4)]
+        [RegularExpression(@"^[a-zA-Z0-9\u00E0-\u00FC ]+$", ErrorMessage = "{0} solo puede contener letras y números.")]
         [DataType(DataType.Text)]
         [Display(Name = "Ciudad")]
         public string? City { get; set; }
 
-        [StringLength(40, ErrorMessage = "La {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]
+        [StringLength(40, ErrorMessage = "La {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 6)]
+        [RegularExpression(@"^[a-zA-Z0-9\u00E0-\u00FC #-\.,]+$", ErrorMessage = "{0} solo puede contener caracteres válidos.")]
         [DataType(DataType.Text)]
         [Display(Name = "Dirección")]
         public string? Address { get; set; }
