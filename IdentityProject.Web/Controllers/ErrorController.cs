@@ -12,10 +12,9 @@ public class ErrorController(ILogger<ErrorController> logger, IHttpContextAccess
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
-    public IActionResult HandleException(Exception ex, string method, string? optionalMessage = null)
+    public void LogException(Exception ex, string method, string? errorMessage = null)
     {
-        string? httpVerb = _httpContextAccessor.HttpContext?.Request.Method ?? string.Empty;
-        _logger.LogError(ex, $"Error al procesar la solicitud {httpVerb} {method}{(optionalMessage is not null ? $": {optionalMessage}" : ".")}");
-        return RedirectToAction(nameof(Error), "Error");
+        string? requestMethod = _httpContextAccessor.HttpContext?.Request.Method ?? string.Empty;
+        _logger.LogError(ex, $"Error al procesar la solicitud {requestMethod} {method}: {(errorMessage is not null ? $"{errorMessage}" : $"{ex.Message}")}");
     }
 }

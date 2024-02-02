@@ -25,7 +25,8 @@ public class RolesController(IErrorController errorController, IRolesService rol
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Index));
+            _errorController.LogException(ex, nameof(Index));
+            throw;
         }
     }
 
@@ -46,7 +47,8 @@ public class RolesController(IErrorController errorController, IRolesService rol
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Create));
+            _errorController.LogException(ex, nameof(Create));
+            throw;
         }
         return View(viewModel);
     }

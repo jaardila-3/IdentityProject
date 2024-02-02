@@ -20,20 +20,15 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     {
         try
         {
-            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException("El parámetro id no debe estar nulo o vacío", nameof(id));
-
+            if (string.IsNullOrEmpty(id)) return NotFound();
             var userDto = await _userAccountManager.FindByIdAsync(id);
-
             var viewModel = userDto!.ToViewModel();
             return View(viewModel);
-        }
-        catch (ArgumentNullException ex)
-        {
-            return _errorController.HandleException(ex, nameof(EditProfile), "id nulo");
-        }
+        }        
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(EditProfile));
+            _errorController.LogException(ex, nameof(EditProfile));
+            throw;
         }
     }
 
@@ -54,7 +49,8 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(EditProfile));
+                _errorController.LogException(ex, nameof(EditProfile));
+                throw;
             }
         }
         return View(viewModel);
@@ -81,7 +77,8 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(ChangePassword));
+                _errorController.LogException(ex, nameof(ChangePassword));
+                throw;
             }
         }
         return View(viewModel);
@@ -102,7 +99,8 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Settings));
+            _errorController.LogException(ex, nameof(Settings));
+            throw;
         }
         ViewData["IsTwoFactorAuthenticationActive"] = isTwoFactorEnabled;
         return View();

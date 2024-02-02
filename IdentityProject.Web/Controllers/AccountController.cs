@@ -31,7 +31,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Register), "Error al crear roles");
+            _errorController.LogException(ex, nameof(Register), "Error al crear roles");
+            throw;
         }
         RegisterViewModel model = new();
         return View(model);
@@ -60,7 +61,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(Register));
+                _errorController.LogException(ex, nameof(Register));
+                throw;
             }
         }
         return View(viewModel);
@@ -77,7 +79,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(RegisterAdmin));
+            _errorController.LogException(ex, nameof(RegisterAdmin));
+            throw;
         }
     }
 
@@ -113,7 +116,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(RegisterAdmin));
+            _errorController.LogException(ex, nameof(RegisterAdmin));
+            throw;
         }
         viewModel.Roles = await GetRoleItemsAsync();
         return View(viewModel);
@@ -123,20 +127,15 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token)) return NotFound();
         try
         {
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException("El parámetro userId no debe estar nulo o vacío", nameof(userId));
-            if (string.IsNullOrEmpty(token)) throw new ArgumentNullException("El parámetro token no debe estar nulo o vacío", nameof(token));
-
             await _accountIdentityManager.ConfirmEmailAsync(userId, token);
-        }
-        catch (ArgumentNullException ex)
-        {
-            return _errorController.HandleException(ex, nameof(ConfirmEmail), "Parámetro vacío");
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(ConfirmEmail));
+            _errorController.LogException(ex, nameof(ConfirmEmail));
+            throw;
         }
         return View();
     }
@@ -168,7 +167,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(Login));
+                _errorController.LogException(ex, nameof(Login));
+                throw;
             }
 
             if (signInResultDto.Succeeded)
@@ -200,7 +200,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(Logout));
+            _errorController.LogException(ex, nameof(Logout));
+            throw;
         }
         return RedirectToAction(nameof(HomeController.Index), "Home");
     }
@@ -241,7 +242,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(ForgotPassword));
+                _errorController.LogException(ex, nameof(ForgotPassword));
+                throw;
             }
             return RedirectToAction(nameof(ForgotPasswordConfirmation));
         }
@@ -254,17 +256,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ResetPassword(string code)
-    {
-        try
-        {
-            return string.IsNullOrEmpty(code) ? throw new ArgumentNullException(nameof(code)) : View();
-        }
-        catch (ArgumentNullException ex)
-        {
-            return _errorController.HandleException(ex, nameof(ResetPassword), "código nulo o vacío");
-        }
-    }
+    public IActionResult ResetPassword(string code) => string.IsNullOrEmpty(code) ? NotFound() : View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -281,7 +273,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(ResetPassword));
+                _errorController.LogException(ex, nameof(ResetPassword));
+                throw;
             }
         }
         return View(viewModel);
@@ -355,7 +348,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(ActivateTwoFactorAuthentication));
+            _errorController.LogException(ex, nameof(ActivateTwoFactorAuthentication));
+            throw;
         }
     }
 
@@ -372,7 +366,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             }
             catch (Exception ex)
             {
-                return _errorController.HandleException(ex, nameof(ActivateTwoFactorAuthentication));
+                _errorController.LogException(ex, nameof(ActivateTwoFactorAuthentication));
+                throw;
             }
 
             if (isConfirm)
@@ -399,7 +394,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(VerifyAuthenticatorCode));
+            _errorController.LogException(ex, nameof(VerifyAuthenticatorCode));
+            throw;
         }
         return View(new VerifyAuthenticatorCodeViewModel { ReturnUrl = returnUrl, RememberMe = rememberMe });
     }
@@ -421,7 +417,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(VerifyAuthenticatorCode));
+            _errorController.LogException(ex, nameof(VerifyAuthenticatorCode));
+            throw;
         }
 
         if (signInResultDto.Succeeded)
@@ -445,7 +442,8 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         }
         catch (Exception ex)
         {
-            return _errorController.HandleException(ex, nameof(DisableTwoFactorAuthentication));
+            _errorController.LogException(ex, nameof(DisableTwoFactorAuthentication));
+            throw;
         }
 
         return RedirectToAction(nameof(HomeController.Index), "Home");
