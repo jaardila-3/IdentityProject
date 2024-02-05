@@ -1,5 +1,6 @@
 using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services.Roles;
+using IdentityProject.Common.Dto;
 using IdentityProject.Common.Enums;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
@@ -34,6 +35,7 @@ public class RolesController(IErrorController errorController, IRolesService rol
     public IActionResult Create() => View();
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(RoleViewModel viewModel)
     {
         if (!ModelState.IsValid) return View(viewModel);
@@ -44,6 +46,37 @@ public class RolesController(IErrorController errorController, IRolesService rol
                 return RedirectToAction(nameof(Index));
 
             foreach (var error in createRoleResult.Errors) ModelState.AddModelError(string.Empty, error);
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Create));
+            throw;
+        }
+        return View(viewModel);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        var role = await _rolesAccountManager.GetByIdAsync(id);
+        if (role is null) return RedirectToAction(nameof(Index));
+        var viewModel = new RoleViewModel { Id = role.Id, Name = role.Name };
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(RoleViewModel viewModel)
+    {
+        if (!ModelState.IsValid) return View(viewModel);
+        try
+        {
+            var updateRoleResult = await _accountIdentityManager.UpdateRoleAsync(new RoleDto(viewModel.Id, viewModel.Name));
+            if (updateRoleResult.Succeeded)
+                return RedirectToAction(nameof(Index));
+
+            foreach (var error in updateRoleResult.Errors) ModelState.AddModelError(string.Empty, error);
         }
         catch (Exception ex)
         {

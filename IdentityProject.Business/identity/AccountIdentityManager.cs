@@ -46,11 +46,13 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return await _userManager.GenerateEmailConfirmationTokenAsync(identityUser);
     }
 
-    public async Task ConfirmEmailAsync(string userId, string token)
+    public async Task<bool> ConfirmEmailAsync(string userId, string token)
     {
-        var identityUser = await _userManager.FindByIdAsync(userId) ?? throw new UserNotFoundException("Usuario no encontrado.");
+        var identityUser = await _userManager.FindByIdAsync(userId);
+        if (identityUser is null) return false;
         var identityResult = await _userManager.ConfirmEmailAsync(identityUser, token);
-        if (!identityResult.Succeeded) throw new EmailConfirmationFailedException("Error al confirmar el correo: " + JsonSerializer.Serialize(identityResult.Errors));
+        if (identityResult is null || !identityResult.Succeeded) throw new EmailConfirmationFailedException("Error al confirmar el correo: " + JsonSerializer.Serialize(identityResult?.Errors));
+        return true;
     }
     #endregion
 
@@ -99,11 +101,17 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     #region Roles
     public async Task<ResultDto> CreateRoleAsync(string roleName)
     {
-        if (await _roleManager.RoleExistsAsync(roleName))
-        {
-            return ResultDto.Failure([$"El rol: {roleName}, ya existe en el sistema"]);
-        }
+        if (await _roleManager.RoleExistsAsync(roleName)) return ResultDto.Failure([$"El rol: {roleName}, ya existe en el sistema"]);
         var identityResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
+        return identityResult.ToApplicationResult();
+    }
+
+    public async Task<ResultDto> UpdateRoleAsync(RoleDto roleDto)
+    {
+        var identityRole = await _roleManager.FindByIdAsync(roleDto.Id!);
+        if (identityRole is null) return ResultDto.Failure([$"El rol No existe en el sistema"]);
+        if (await _roleManager.RoleExistsAsync(roleDto.Name!)) return ResultDto.Failure([$"El nombre del rol: {roleDto.Name}, ya existe en el sistema"]);
+        var identityResult = await _roleManager.UpdateAsync(identityRole);
         return identityResult.ToApplicationResult();
     }
 
@@ -119,8 +127,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     #region Two Factor Authentication
     public async Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
     {
-        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated)
-            throw new ArgumentNullException(nameof(UserClaim));
+        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return (string.Empty, string.Empty);
 
         var identityUser = await _userManager.GetUserAsync(UserClaim) ?? throw new UserNotFoundException("El usuario no existe");
         var resetAuthenticatorKeyResult = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
@@ -131,8 +138,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
 
     public async Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode)
     {
-        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated)
-            throw new ArgumentNullException(nameof(UserClaim));
+        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return false;
 
         var identityUser = await _userManager.GetUserAsync(UserClaim);
         if (identityUser is null) return false;
@@ -151,19 +157,18 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
 
     public async Task DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
     {
-        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated)
-            throw new ArgumentNullException(nameof(UserClaim));
+        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return;
 
         var identityUser = await _userManager.GetUserAsync(UserClaim) ?? throw new UserNotFoundException("El usuario no existe");
+
         // Verify two factor authentication is enabled
-        if (!await _userManager.GetTwoFactorEnabledAsync(identityUser))
-            throw new AuthenticationFailedException("La autenticación de dos factores no está habilitada para este usuario");
+        if (!await _userManager.GetTwoFactorEnabledAsync(identityUser)) return;
 
         //Disable two factor authentication
-        var resultResetAuthenticatorKey = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
         bool enabled = false;
+        var resultResetAuthenticatorKey = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
         var resultTwoFactorDisable = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
-        if (!resultResetAuthenticatorKey.Succeeded || !resultTwoFactorDisable.Succeeded)
+        if (resultResetAuthenticatorKey is null || resultTwoFactorDisable is null || !resultResetAuthenticatorKey.Succeeded || !resultTwoFactorDisable.Succeeded)
             throw new AuthenticationFailedException("No se pudo deshabilitar la autenticación de dos factores.");
     }
 

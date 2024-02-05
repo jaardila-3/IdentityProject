@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace IdentityProject.DataAccess.Interfaces.Repositories;
 public interface IRolesRepository
 {
-    Task<List<Microsoft.AspNetCore.Identity.IdentityRole>?> GetListAsync();
+    Task<List<IdentityRole>?> GetListAsync();
+    Task<IdentityRole?> GetByIdAsync(string id);
 }

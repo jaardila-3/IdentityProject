@@ -128,16 +128,17 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token)) return NotFound();
+        bool isConfirmEmail = false;
         try
         {
-            await _accountIdentityManager.ConfirmEmailAsync(userId, token);
+            isConfirmEmail = await _accountIdentityManager.ConfirmEmailAsync(userId, token);
         }
         catch (Exception ex)
         {
             _errorController.LogException(ex, nameof(ConfirmEmail));
             throw;
         }
-        return View();
+        return isConfirmEmail ? View() : NotFound();
     }
     #endregion
 
@@ -339,6 +340,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         try
         {
             var (token, email) = await _accountIdentityManager.InitiateTwoFactorAuthenticationAsync(User);
+            if (string.IsNullOrEmpty(token) && string.IsNullOrEmpty(email)) return NotFound();
             // Create QR code
             string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
             string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(email), token);

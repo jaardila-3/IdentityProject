@@ -14,4 +14,12 @@ public class RolesService(IUnitOfWork unitOfWork) : IRolesService
         return rolesDto;
     }
 
+    public async Task<RoleDto?> GetByIdAsync(string id)
+    {
+        var role = await _unitOfWork.RolesRepository.GetByIdAsync(id);
+        if (role is null) return null;
+        var roleDto = new RoleDto(role.Id, role.Name);
+        return roleDto;
+    }
+
 }

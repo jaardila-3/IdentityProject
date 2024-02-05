@@ -9,7 +9,7 @@ public interface IAccountIdentityManager
     #region Register
     Task<(ResultDto result, string userId)> CreateUserAsync(UserDto user, string password, string roleName, bool autoSignIn = true);
     Task<string> GenerateEmailConfirmationTokenAsync(string userId);
-    Task ConfirmEmailAsync(string userId, string token);
+    Task<bool> ConfirmEmailAsync(string userId, string token);
     #endregion
 
     #region Users
@@ -25,6 +25,7 @@ public interface IAccountIdentityManager
 
     #region Roles
     Task<ResultDto> CreateRoleAsync(string roleName);
+    Task<ResultDto> UpdateRoleAsync(RoleDto roleDto);
     Task<List<string?>?> GetRolesAsync();
     Task SetupRolesAsync();
     #endregion    
