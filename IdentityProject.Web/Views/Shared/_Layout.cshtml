@@ -16,16 +16,6 @@
     <!--css for the site -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/IdentityProject.Web.styles.css" asp-append-version="true" />
-    <!----------------------------------------js------------------------------------------------------------------->
-    <script defer src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script defer src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <!--js for jquery ui datepicker-->
-    <script defer src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-    <!--js for jquery datatables-->
-    <script defer src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
-    <!--js for the site -->
-    <script defer src="~/js/site.js" asp-append-version="true"></script>
-
 </head>
 
 <body>
@@ -71,6 +61,16 @@
             &copy; 2024 - IdentityProject - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
         </div>
     </footer>
+
+    <!----------------------------------------js------------------------------------------------------------------->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!--js for jquery ui datepicker-->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <!--js for jquery datatables-->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+    <!--js for the site -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

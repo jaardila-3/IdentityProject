@@ -1,4 +1,5 @@
-﻿//#region datepicker
+﻿"use strict";
+//#region datepicker
 $(function () {
     $("#datepicker").datepicker({
         changeMonth: true,
