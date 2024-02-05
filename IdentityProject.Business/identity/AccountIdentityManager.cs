@@ -109,8 +109,10 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     public async Task<ResultDto> UpdateRoleAsync(RoleDto roleDto)
     {
         var identityRole = await _roleManager.FindByIdAsync(roleDto.Id!);
-        if (identityRole is null) return ResultDto.Failure([$"El rol No existe en el sistema"]);
+        if (identityRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
         if (await _roleManager.RoleExistsAsync(roleDto.Name!)) return ResultDto.Failure([$"El nombre del rol: {roleDto.Name}, ya existe en el sistema"]);
+        //asign the new name
+        identityRole.Name = roleDto.Name;
         var identityResult = await _roleManager.UpdateAsync(identityRole);
         return identityResult.ToApplicationResult();
     }
@@ -121,6 +123,19 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     {
         await CreateRoleAsync(nameof(RoleType.Usuario_Registrado));
         await CreateRoleAsync(nameof(RoleType.Admin));
+    }
+
+    public async Task<ResultDto> DeleteRoleAsync(string id)
+    {
+        var identityRole = await _roleManager.FindByIdAsync(id);
+        if (identityRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
+
+        // Verify that the role has users assigned
+        var usersInRole = await _userManager.GetUsersInRoleAsync(identityRole.Name!);
+        if (usersInRole.Any()) return ResultDto.Failure(["El rol tiene usuarios asignados. No se puede eliminar"]);
+
+        var identityResult = await _roleManager.DeleteAsync(identityRole);
+        return identityResult.ToApplicationResult();
     }
     #endregion
 

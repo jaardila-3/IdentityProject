@@ -59,7 +59,16 @@ public class RolesController(IErrorController errorController, IRolesService rol
     public async Task<IActionResult> Edit(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();
-        var role = await _rolesAccountManager.GetByIdAsync(id);
+        RoleDto? role = null;
+        try
+        {
+            role = await _rolesAccountManager.GetByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Edit));
+            throw;
+        }
         if (role is null) return RedirectToAction(nameof(Index));
         var viewModel = new RoleViewModel { Id = role.Id, Name = role.Name };
         return View(viewModel);
@@ -80,9 +89,27 @@ public class RolesController(IErrorController errorController, IRolesService rol
         }
         catch (Exception ex)
         {
-            _errorController.LogException(ex, nameof(Create));
+            _errorController.LogException(ex, nameof(Edit));
             throw;
         }
         return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        try
+        {
+            var deleteRoleResult = await _accountIdentityManager.DeleteRoleAsync(id);
+            if (deleteRoleResult.Succeeded) return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Delete));
+            throw;
+        }
+        return RedirectToAction(nameof(HomeController.Index), "Home");
     }
 }

@@ -41,7 +41,7 @@
                                                 <a class="btn btn-primary" asp-controller="Roles" asp-action="Edit"
                                                     asp-route-id="@item.Id">Editar</a>
                                                 <form asp-controller="Roles" asp-action="Delete" asp-route-id="@item.Id"
-                                                    method="delete">
+                                                    method="post">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" class="btn btn-danger"
                                                         onclick="return confirm('¿Está seguro de borrar este registro?')">Borrar</button>
