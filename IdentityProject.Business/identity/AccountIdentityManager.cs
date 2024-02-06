@@ -170,21 +170,23 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return isSucceeded; //false
     }
 
-    public async Task DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
+    public async Task<bool> DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
     {
-        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return;
+        if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return false;
 
         var identityUser = await _userManager.GetUserAsync(UserClaim) ?? throw new UserNotFoundException("El usuario no existe");
 
         // Verify two factor authentication is enabled
-        if (!await _userManager.GetTwoFactorEnabledAsync(identityUser)) return;
+        if (!await _userManager.GetTwoFactorEnabledAsync(identityUser)) return false;
 
         //Disable two factor authentication
         bool enabled = false;
-        var resultResetAuthenticatorKey = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
-        var resultTwoFactorDisable = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
-        if (resultResetAuthenticatorKey is null || resultTwoFactorDisable is null || !resultResetAuthenticatorKey.Succeeded || !resultTwoFactorDisable.Succeeded)
+        var resetAuthenticatorKey = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
+        var twoFactorDisable = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
+        if (resetAuthenticatorKey is null || twoFactorDisable is null || !resetAuthenticatorKey.Succeeded || !twoFactorDisable.Succeeded)
             throw new AuthenticationFailedException("No se pudo deshabilitar la autenticación de dos factores.");
+
+        return true;
     }
 
     public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal UserClaim)

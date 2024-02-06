@@ -43,7 +43,10 @@ public class RolesController(IErrorController errorController, IRolesService rol
         {
             var createRoleResult = await _accountIdentityManager.CreateRoleAsync(viewModel.Name!);
             if (createRoleResult.Succeeded)
+            {
+                TempData["Success"] = "Rol creado correctamente";
                 return RedirectToAction(nameof(Index));
+            }
 
             foreach (var error in createRoleResult.Errors) ModelState.AddModelError(string.Empty, error);
         }
@@ -69,7 +72,11 @@ public class RolesController(IErrorController errorController, IRolesService rol
             _errorController.LogException(ex, nameof(Edit));
             throw;
         }
-        if (role is null) return RedirectToAction(nameof(Index));
+        if (role is null)
+        {
+            TempData["Error"] = "El rol no existe";
+            return RedirectToAction(nameof(Index));
+        }
         var viewModel = new RoleViewModel { Id = role.Id, Name = role.Name };
         return View(viewModel);
     }
@@ -83,7 +90,10 @@ public class RolesController(IErrorController errorController, IRolesService rol
         {
             var updateRoleResult = await _accountIdentityManager.UpdateRoleAsync(new RoleDto(viewModel.Id, viewModel.Name));
             if (updateRoleResult.Succeeded)
+            {
+                TempData["Success"] = "Rol actualizado correctamente";
                 return RedirectToAction(nameof(Index));
+            }
 
             foreach (var error in updateRoleResult.Errors) ModelState.AddModelError(string.Empty, error);
         }
@@ -103,13 +113,18 @@ public class RolesController(IErrorController errorController, IRolesService rol
         try
         {
             var deleteRoleResult = await _accountIdentityManager.DeleteRoleAsync(id);
-            if (deleteRoleResult.Succeeded) return RedirectToAction(nameof(Index));
+            if (deleteRoleResult.Succeeded)
+            {
+                TempData["Success"] = "Rol borrado correctamente";
+                return RedirectToAction(nameof(Index));
+            }
+            TempData["Error"] = deleteRoleResult.Errors.FirstOrDefault();
         }
         catch (Exception ex)
         {
             _errorController.LogException(ex, nameof(Delete));
             throw;
         }
-        return RedirectToAction(nameof(HomeController.Index), "Home");
+        return RedirectToAction(nameof(Index));
     }
 }

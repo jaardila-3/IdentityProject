@@ -34,7 +34,7 @@ public interface IAccountIdentityManager
     #region Two Factor Authentication
     Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal User);
     Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode);
-    Task DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim);
+    Task<bool> DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim);
     Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal);
     #endregion
 

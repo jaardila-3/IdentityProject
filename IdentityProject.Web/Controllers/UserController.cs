@@ -43,7 +43,10 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
                 var userDto = viewModel.ToDto();
                 var updateUserResult = await _accountIdentityManager.UpdateUserAsync(userDto);
                 if (updateUserResult.Succeeded)
+                {
+                    TempData["Success"] = "Perfil actualizado correctamente";
                     return RedirectToAction(nameof(HomeController.Index), "Home");
+                }
 
                 foreach (var error in updateUserResult.Errors) ModelState.AddModelError(string.Empty, error);
             }

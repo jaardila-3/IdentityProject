@@ -54,7 +54,10 @@ public class AccountController(IErrorController errorController, IAccountIdentit
                 if (resultDtoUsercreated.Succeeded)
                 {
                     if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                    {
+                        TempData["Error"] = "No se pudo enviar el email de confirmación";
                         Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
+                    }
                     return RedirectToAction(nameof(HomeController.Index), "Home");
                 }
                 foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
@@ -109,7 +112,11 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             if (resultDtoUsercreated.Succeeded)
             {
                 if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                {
+                    TempData["Error"] = "No se pudo enviar el email de confirmación";
                     Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
+                }
+                TempData["Success"] = "Usuario creado correctamente";
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
             foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
@@ -438,9 +445,10 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     [HttpGet]
     public async Task<IActionResult> DisableTwoFactorAuthentication()
     {
+        bool disable = false;
         try
         {
-            await _accountIdentityManager.DisableTwoFactorAuthenticationAsync(User);
+            disable = await _accountIdentityManager.DisableTwoFactorAuthenticationAsync(User);
         }
         catch (Exception ex)
         {
@@ -448,6 +456,9 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             throw;
         }
 
+        if (!disable) TempData["Error"] = "La autenticación de dos factores No pudo ser desactivada";
+
+        TempData["Success"] = "La autenticación de dos factores ha sido desactivada";
         return RedirectToAction(nameof(HomeController.Index), "Home");
     }
     #endregion
