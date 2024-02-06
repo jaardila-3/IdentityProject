@@ -3,5 +3,6 @@ using IdentityProject.Common.Dto;
 namespace IdentityProject.Business.Interfaces.Services.Users;
 public interface IUsersService
 {
-    Task<UserDto?> FindByIdAsync(string id);
+    Task<UserDto?> FindUserByIdAsync(string id);
+    Task<List<UserDto>?> GetListUsersAsync();
 }

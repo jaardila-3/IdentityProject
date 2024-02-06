@@ -9,10 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
 [Authorize(Roles = nameof(RoleType.Admin))]
-public class RolesController(IErrorController errorController, IRolesService rolesAccountManager, IAccountIdentityManager accountIdentityManager) : Controller
+public class RolesController(IErrorController errorController, IRolesService rolesService, IAccountIdentityManager accountIdentityManager) : Controller
 {
     private readonly IErrorController _errorController = errorController;
-    private readonly IRolesService _rolesAccountManager = rolesAccountManager;
+    private readonly IRolesService _rolesService = rolesService;
     private readonly IAccountIdentityManager _accountIdentityManager = accountIdentityManager;
 
     [HttpGet]
@@ -20,7 +20,7 @@ public class RolesController(IErrorController errorController, IRolesService rol
     {
         try
         {
-            var roles = await _rolesAccountManager.GetListAsync() ?? [];
+            var roles = await _rolesService.GetListRolesAsync() ?? [];
             var viewModel = roles.Select(r => new RoleViewModel { Id = r.Id, Name = r.Name }).ToList();
             return View(viewModel);
         }
@@ -65,7 +65,7 @@ public class RolesController(IErrorController errorController, IRolesService rol
         RoleDto? role = null;
         try
         {
-            role = await _rolesAccountManager.GetByIdAsync(id);
+            role = await _rolesService.GetRoleByIdAsync(id);
         }
         catch (Exception ex)
         {

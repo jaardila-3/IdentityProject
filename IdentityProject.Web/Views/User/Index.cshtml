@@ -1,0 +1,78 @@
+@model IEnumerable<UserViewModel>
+
+@{
+    ViewData["Title"] = "Admin Usuarios";
+}
+
+<h1 class="text-center">Administración de usuarios</h1>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card border">
+            <div class="card-header">
+                <h3><strong>Lista de usuarios</strong></h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    @if (Model.Count() > 0)
+                    {
+                        <table class="table" id="datatables" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(u => u.Name)</th>
+                                    <th>@Html.DisplayNameFor(u => u.Email)</th>
+                                    <th>@Html.DisplayNameFor(u => u.UserName)</th>
+                                    <th>@Html.DisplayNameFor(u => u.PhoneNumber)</th>
+                                    <th>@Html.DisplayNameFor(u => u.Role)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@Html.DisplayFor(role => item.Name)</td>
+                                        <td>@Html.DisplayFor(role => item.Email)</td>
+                                        <td>@Html.DisplayFor(role => item.UserName)</td>
+                                        <td>@Html.DisplayFor(role => item.PhoneNumber)</td>
+                                        <td>@Html.DisplayFor(role => item.Role)</td>
+                                        <td>
+                                            <div class="btn-group" style="gap: 10px;">
+                                                <a class="btn btn-primary" asp-controller="User" asp-action="Edit"
+                                                    asp-route-id="@item.Id">Editar</a>
+                                                <a class="btn btn-warning" asp-controller="User" asp-action="Lock"
+                                                    asp-route-id="@item.Id">Bloquear</a>
+                                                <a class="btn btn-danger" asp-controller="User" asp-action="Delete"
+                                                    asp-route-id="@item.Id">Eliminar</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>No hay registros</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+    @if (TempData["Success"] is not null)
+    {
+        <script type="text/javascript">
+            toastr.success("@TempData["Success"]");
+        </script>
+    }
+    @if (TempData["Error"] is not null)
+    {
+        <script type="text/javascript">
+            toastr.error("@TempData["Error"]");
+        </script>
+    }
+}

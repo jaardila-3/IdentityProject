@@ -9,9 +9,9 @@ namespace IdentityProject.Web.Models.MapperExtensions
             return new UserDto(string.Empty, model.UserName, model.Email, model.Name, model.Url, model.CountryCode, model.PhoneNumber, model.Country, model.City, model.Address, model.Birthdate, model.State);
         }
 
-        public static EditProfileViewModel ToViewModel(this UserDto dto)
+        public static UserViewModel ToViewModel(this UserDto dto)
         {
-            return new EditProfileViewModel
+            return new UserViewModel
             {
                 Id = dto.Id,
                 Email = dto.Email,
@@ -28,7 +28,7 @@ namespace IdentityProject.Web.Models.MapperExtensions
             };
         }
 
-        public static UserDto ToDto(this EditProfileViewModel model)
+        public static UserDto ToDto(this UserViewModel model)
         {
             return new UserDto(model.Id, model.UserName, model.Email, model.Name, model.Url, model.CountryCode, model.PhoneNumber, model.Country, model.City, model.Address, model.Birthdate, model.State);
         }

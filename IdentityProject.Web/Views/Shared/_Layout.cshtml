@@ -39,10 +39,17 @@
                             <a class="nav-link text-white" asp-area="" asp-controller="Home"
                                 asp-action="Privacy">Privacidad</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Roles"
-                                asp-action="Index">Administrar Roles</a>
-                        </li>
+                        @if (User.IsInRole(nameof(IdentityProject.Common.Enums.RoleType.Admin)))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="User"
+                                    asp-action="Index">Administrar Usuarios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Roles"
+                                    asp-action="Index">Administrar Roles</a>
+                            </li>
+                        }
                     </ul>
 
                     <!--partial view for login and register-->

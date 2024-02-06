@@ -3,6 +3,7 @@ using IdentityProject.Common.Dto;
 namespace IdentityProject.Business.Interfaces.Services.Roles;
 public interface IRolesService
 {
-    Task<List<RoleDto>?> GetListAsync();
-    Task<RoleDto?> GetByIdAsync(string id);
+    Task<List<RoleDto>?> GetListRolesAsync();
+    Task<RoleDto?> GetRoleByIdAsync(string id);
+    Task<List<UserRolesDto>?> GetListUserRolesAsync();
 }

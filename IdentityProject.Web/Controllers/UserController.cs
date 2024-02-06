@@ -1,4 +1,5 @@
 using IdentityProject.Business.Interfaces.Identity;
+using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.Business.Interfaces.Services.Users;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
@@ -8,11 +9,40 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
 [Authorize]
-public class UserController(IErrorController errorController, IAccountIdentityManager accountIdentityManager, IUsersService userAccountManager) : Controller
+public class UserController(IErrorController errorController, IAccountIdentityManager accountIdentityManager, IUsersService userService, IRolesService rolesService) : Controller
 {
     private readonly IErrorController _errorController = errorController;
     private readonly IAccountIdentityManager _accountIdentityManager = accountIdentityManager;
-    private readonly IUsersService _userAccountManager = userAccountManager;
+    private readonly IUsersService _userService = userService;
+    private readonly IRolesService _rolesService = rolesService;
+
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        List<UserViewModel>? viewModel = [];
+        try
+        {
+            var users = await _userService.GetListUsersAsync() ?? [];
+            viewModel = users.Select(u => u.ToViewModel()).ToList();
+            var userRoles = await _rolesService.GetListUserRolesAsync() ?? [];
+            var roles = await _rolesService.GetListRolesAsync() ?? [];
+            foreach (var user in viewModel)
+            {
+                var userRole = userRoles.FirstOrDefault(ur => ur.UserId == user.Id);
+                if (userRole is not null)
+                {
+                    user.RoleId = userRole.RoleId;
+                    user.Role = roles.FirstOrDefault(r => r.Id == userRole.RoleId)?.Name;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Index));
+            throw;
+        }
+        return View(viewModel);
+    }
 
     #region Edit profile
     [HttpGet]
@@ -21,10 +51,11 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         try
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
-            var userDto = await _userAccountManager.FindByIdAsync(id);
+            var userDto = await _userService.FindUserByIdAsync(id);
+            if (userDto is null) return NotFound();
             var viewModel = userDto!.ToViewModel();
             return View(viewModel);
-        }        
+        }
         catch (Exception ex)
         {
             _errorController.LogException(ex, nameof(EditProfile));
@@ -34,7 +65,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditProfile(EditProfileViewModel viewModel)
+    public async Task<IActionResult> EditProfile(UserViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
