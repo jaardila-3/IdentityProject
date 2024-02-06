@@ -27,4 +27,11 @@ public class RolesService(IUnitOfWork unitOfWork) : IRolesService
         return userRoles.Select(ur => new UserRolesDto(ur.UserId, ur.RoleId)).ToList();
     }
 
+    public async Task<UserRolesDto?> GetUserRolesByUserIdAsync(string userId)
+    {
+        var userRole = await _unitOfWork.RolesRepository.GetUserRolesByUserIdAsync(userId);
+        if (userRole is null) return null;
+        return new UserRolesDto(userRole.UserId, userRole.RoleId);
+    }
+
 }

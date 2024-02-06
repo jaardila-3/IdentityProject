@@ -66,6 +66,6 @@ public record UserViewModel
 
     [Display(Name = "Rol para el usuario")]
     public string? RoleId { get; set; }
-    public string? Role { get; set; }
+    public string? RoleName { get; set; }
     public IEnumerable<SelectListItem>? Roles { get; set; }
 }

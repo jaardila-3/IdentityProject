@@ -1,11 +1,13 @@
 using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.Business.Interfaces.Services.Users;
+using IdentityProject.Common.Enums;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
 using IdentityProject.Web.Models.MapperExtensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IdentityProject.Web.Controllers;
 [Authorize]
@@ -17,6 +19,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     private readonly IRolesService _rolesService = rolesService;
 
     [HttpGet]
+    [Authorize(Roles = nameof(RoleType.Admin))]
     public async Task<IActionResult> Index()
     {
         List<UserViewModel>? viewModel = [];
@@ -32,7 +35,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
                 if (userRole is not null)
                 {
                     user.RoleId = userRole.RoleId;
-                    user.Role = roles.FirstOrDefault(r => r.Id == userRole.RoleId)?.Name;
+                    user.RoleName = roles.FirstOrDefault(r => r.Id == userRole.RoleId)?.Name;
                 }
             }
         }
@@ -42,6 +45,36 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             throw;
         }
         return View(viewModel);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> Edit(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        try
+        {
+            var user = await _userService.FindUserByIdAsync(id); ;
+            if (user is null) return NotFound();
+            var viewModel = user.ToViewModel();
+
+            var userRole = await _rolesService.GetUserRolesByUserIdAsync(id);
+            if (userRole is null) return NotFound("No se encontraron roles asignados al usuario.");
+            viewModel.RoleId = userRole.RoleId;
+            
+            var role = await _rolesService.GetRoleByIdAsync(userRole.RoleId!);
+            if (role is null) return NotFound("No existe el rol.");
+            viewModel.RoleName = role.Name;
+
+            var roles = await _rolesService.GetListRolesAsync();
+            viewModel.Roles = roles?.Select(r => new SelectListItem { Value = r.Id, Text = r.Name }).ToList();
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Edit));
+            throw;
+        }
     }
 
     #region Edit profile

@@ -23,7 +23,7 @@
                                     <th>@Html.DisplayNameFor(u => u.Email)</th>
                                     <th>@Html.DisplayNameFor(u => u.UserName)</th>
                                     <th>@Html.DisplayNameFor(u => u.PhoneNumber)</th>
-                                    <th>@Html.DisplayNameFor(u => u.Role)</th>
+                                    <th>@Html.DisplayNameFor(u => u.RoleName)</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -35,7 +35,7 @@
                                         <td>@Html.DisplayFor(role => item.Email)</td>
                                         <td>@Html.DisplayFor(role => item.UserName)</td>
                                         <td>@Html.DisplayFor(role => item.PhoneNumber)</td>
-                                        <td>@Html.DisplayFor(role => item.Role)</td>
+                                        <td>@Html.DisplayFor(role => item.RoleName)</td>
                                         <td>
                                             <div class="btn-group" style="gap: 10px;">
                                                 <a class="btn btn-primary" asp-controller="User" asp-action="Edit"
