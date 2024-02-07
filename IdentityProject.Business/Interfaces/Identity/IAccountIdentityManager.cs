@@ -29,6 +29,7 @@ public interface IAccountIdentityManager
     Task<List<string?>?> GetRolesAsync();
     Task SetupRolesAsync();
     Task<ResultDto> DeleteRoleAsync(string id);
+    Task<ResultDto> RemoveUserRoleAndAssignNewRoleAsync(string userId, string oldRoleId, string newRoleId);
     #endregion    
 
     #region Two Factor Authentication

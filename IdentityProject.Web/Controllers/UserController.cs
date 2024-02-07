@@ -61,7 +61,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             var userRole = await _rolesService.GetUserRolesByUserIdAsync(id);
             if (userRole is null) return NotFound("No se encontraron roles asignados al usuario.");
             viewModel.RoleId = userRole.RoleId;
-            
+
             var role = await _rolesService.GetRoleByIdAsync(userRole.RoleId!);
             if (role is null) return NotFound("No existe el rol.");
             viewModel.RoleName = role.Name;
@@ -75,6 +75,35 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             _errorController.LogException(ex, nameof(Edit));
             throw;
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> Edit(UserViewModel viewModel, string oldRoleId)
+    {
+        try
+        {
+            if (ModelState.IsValid)
+            {
+                var roleToRemoveResult = await _accountIdentityManager.RemoveUserRoleAndAssignNewRoleAsync(viewModel.Id!, oldRoleId, viewModel.RoleId!);
+                if (roleToRemoveResult.Succeeded)
+                {
+                    TempData["Success"] = "Nuevo rol asignado correctamente";
+                    return RedirectToAction(nameof(Index));
+                }
+                foreach (var error in roleToRemoveResult.Errors) ModelState.AddModelError(string.Empty, error);
+            }
+            var roles = await _rolesService.GetListRolesAsync();
+            viewModel.Roles = roles?.Select(r => new SelectListItem { Value = r.Id, Text = r.Name }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Edit));
+            throw;
+        }
+        viewModel.RoleId = oldRoleId;
+        return View(viewModel);
     }
 
     #region Edit profile

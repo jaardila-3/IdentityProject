@@ -5,6 +5,7 @@ namespace IdentityProject.Web.Models;
 public record UserViewModel
 {
     [Required]
+    [StringLength(50, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 15)]
     public string? Id { get; set; }
 
     [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 5)]
@@ -39,7 +40,6 @@ public record UserViewModel
     [Display(Name = "Teléfono")]
     public string? PhoneNumber { get; set; }
 
-    [Required(ErrorMessage = "El {0} es obligatorio")]
     [StringLength(20, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 4)]
     [RegularExpression(@"^[a-zA-Z0-9\u00E0-\u00FC ]+$", ErrorMessage = "{0} solo puede contener letras y números.")]
     [DataType(DataType.Text)]
@@ -65,6 +65,7 @@ public record UserViewModel
     public bool State { get; set; }
 
     [Display(Name = "Rol para el usuario")]
+    [StringLength(50, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 15)]
     public string? RoleId { get; set; }
     public string? RoleName { get; set; }
     public IEnumerable<SelectListItem>? Roles { get; set; }
