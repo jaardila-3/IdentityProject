@@ -14,6 +14,7 @@ $(function () {
 $(document).ready(function () {
     $('#datatables').DataTable(
         {
+            responsive: true, //https://es.stackoverflow.com/questions/169323/como-colocar-responsive-datatables
             language: {
                 "decimal": ",",
                 "thousands": ".",

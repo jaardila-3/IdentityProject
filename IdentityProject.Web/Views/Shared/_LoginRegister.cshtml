@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity;
 @using IdentityProject.Common.Enums;
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
@@ -36,7 +36,8 @@
         @if (User.IsInRole(nameof(RoleType.Admin)))
         {
             <li class="nav-item">
-                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="RegisterAdmin">Registrar Nuevo Usuario</a>
+                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="RegisterAdmin">Registrar Nuevo
+                    Usuario</a>
             </li>
         }
 

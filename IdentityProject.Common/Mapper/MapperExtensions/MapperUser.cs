@@ -25,6 +25,6 @@ public static class MapperUser
 
     public static UserDto ToDto(this AppUser entity)
     {
-        return new UserDto(entity.Id, entity.UserName, entity.Email, entity.Name, entity.Url, entity.CountryCode, entity.PhoneNumber, entity.Country, entity.City, entity.Address, entity.Birthdate, entity.State);
+        return new UserDto(entity.Id, entity.UserName, entity.Email, entity.Name, entity.Url, entity.CountryCode, entity.PhoneNumber, entity.Country, entity.City, entity.Address, entity.Birthdate, entity.State, entity.LockoutEnd);
     }
 }

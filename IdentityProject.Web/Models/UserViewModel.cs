@@ -69,4 +69,6 @@ public record UserViewModel
     public string? RoleId { get; set; }
     public string? RoleName { get; set; }
     public IEnumerable<SelectListItem>? Roles { get; set; }
+
+    public DateTimeOffset? LockoutEnd { get; set; } = null;
 }

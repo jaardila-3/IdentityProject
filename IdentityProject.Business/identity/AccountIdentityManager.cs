@@ -51,8 +51,8 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         var identityUser = await _userManager.FindByIdAsync(userId);
         if (identityUser is null) return false;
         var identityResult = await _userManager.ConfirmEmailAsync(identityUser, token);
-        if (identityResult is null || !identityResult.Succeeded) throw new EmailConfirmationFailedException("Error al confirmar el correo: " + JsonSerializer.Serialize(identityResult?.Errors));
-        return true;
+        if (identityResult is null) return false;
+        return identityResult.Succeeded;
     }
     #endregion
 
@@ -72,6 +72,24 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         var identityResult = await _userManager.UpdateAsync(identityUser);
         if (identityResult is null) return ResultDto.Failure(["No se pudo actualizar el usuario"]);
         return identityResult.ToApplicationResult();
+    }
+
+    public async Task<ResultDto> LockAndUnlockUserAsync(string id, DateTimeOffset? endDate = null)
+    {
+        endDate ??= DateTimeOffset.UtcNow;
+        var identityUser = await _userManager.FindByIdAsync(id);
+        if (identityUser is null) return ResultDto.Failure(["No existe el usuario"]);
+
+        //activate this feature if you want to lock users, if you don't activate it, you can't lock users and the user will be able to login
+        //in database is the LockoutEnabled field
+        var lockUserResult = await _userManager.SetLockoutEnabledAsync(identityUser, true);
+        if (lockUserResult is null) return ResultDto.Failure(["No se pudo activar la funcionalidad de bloqueo de usuario."]);
+
+        var lockDateResult = await _userManager.SetLockoutEndDateAsync(identityUser, endDate);
+        if (lockDateResult is null) return ResultDto.Failure(["No se pudo establecer la fecha final para bloquear al usuario."]);
+
+        if (lockUserResult.Succeeded && lockDateResult.Succeeded) return ResultDto.Success();
+        return ResultDto.Failure(["Error inesperado al bloquear el usuario."]);
     }
     #endregion
 
@@ -202,14 +220,16 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         // Verify two factor authentication is enabled
         if (!await _userManager.GetTwoFactorEnabledAsync(identityUser)) return false;
 
+        // Reset the authenticator key for enhanced security when disabling two-factor authentication.
+        var resetAuthenticatorKeyResult = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
+        if (resetAuthenticatorKeyResult is null || !resetAuthenticatorKeyResult.Succeeded) return false;
+
         //Disable two factor authentication
         bool enabled = false;
-        var resetAuthenticatorKey = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
-        var twoFactorDisable = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
-        if (resetAuthenticatorKey is null || twoFactorDisable is null || !resetAuthenticatorKey.Succeeded || !twoFactorDisable.Succeeded)
-            throw new AuthenticationFailedException("No se pudo deshabilitar la autenticación de dos factores.");
+        var twoFactorDisableResult = await _userManager.SetTwoFactorEnabledAsync(identityUser, enabled);
+        if (twoFactorDisableResult is null) return false;
 
-        return true;
+        return twoFactorDisableResult.Succeeded;
     }
 
     public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal UserClaim)

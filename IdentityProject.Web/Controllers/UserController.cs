@@ -47,6 +47,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         return View(viewModel);
     }
 
+    #region Edit User
     [HttpGet]
     [Authorize(Roles = nameof(RoleType.Admin))]
     public async Task<IActionResult> Edit(string id)
@@ -105,6 +106,54 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         viewModel.RoleId = oldRoleId;
         return View(viewModel);
     }
+    #endregion
+
+    #region Lock and Unlock
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> Lock(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        var endDate = DateTimeOffset.UtcNow.AddYears(1);
+        try
+        {
+            var lockUserResult = await _accountIdentityManager.LockAndUnlockUserAsync(id, endDate);
+            if (lockUserResult.Succeeded)
+                TempData["Success"] = "Usuario bloqueado correctamente";
+            else
+                TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Lock));
+            throw;
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> Unlock(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        try
+        {
+            var lockUserResult = await _accountIdentityManager.LockAndUnlockUserAsync(id);
+            if (lockUserResult.Succeeded)
+                TempData["Success"] = "Usuario desbloqueado correctamente";
+            else
+                TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Unlock));
+            throw;
+        }
+        return RedirectToAction(nameof(Index));
+    }
+    #endregion
 
     #region Edit profile
     [HttpGet]
