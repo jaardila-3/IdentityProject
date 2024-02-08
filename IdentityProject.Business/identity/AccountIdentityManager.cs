@@ -91,6 +91,16 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         if (lockUserResult.Succeeded && lockDateResult.Succeeded) return ResultDto.Success();
         return ResultDto.Failure(["Error inesperado al bloquear el usuario."]);
     }
+
+    public async Task<ResultDto> DeleteUserAsync(string id)
+    {
+        var identityUser = await _userManager.FindByIdAsync(id);
+        if (identityUser is null) return ResultDto.Failure(["No existe el usuario"]);
+
+        var identityResult = await _userManager.DeleteAsync(identityUser);
+        if (identityResult is null) return ResultDto.Failure(["No se pudo eliminar el usuario"]);
+        return identityResult.ToApplicationResult();
+    }
     #endregion
 
     #region SignIn    

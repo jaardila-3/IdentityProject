@@ -1,4 +1,6 @@
 @model IEnumerable<UserViewModel>
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
 
 @{
     ViewData["Title"] = "Admin Usuarios";
@@ -57,8 +59,11 @@
                                                             style="width: 110px;">Desbloquear</button>
                                                     }
 
-                                                    <a class="btn btn-danger" asp-controller="User" asp-action="Delete"
-                                                        asp-route-id="@item.Id" style="width: 90px;">Eliminar</a>
+                                                    @if (UserManager.GetUserName(User) != item.UserName)
+                                                    {
+                                                        <button type="submit" class="btn btn-danger" style="width: 90px;"
+                                                            onclick="return confirm('¿Está seguro de borrar este registro?')">Eliminar</button>
+                                                    }
                                                 </form>
                                             </div>
                                         </td>

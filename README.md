@@ -17,7 +17,7 @@ In this project, I created a new application using the technology of **ASP.NET I
 
 ## CLI Commands
 
-### For creating and updating the project
+### To create and update the project
 
 - dotnet new sln
 - dotnet new mvc
@@ -25,12 +25,12 @@ In this project, I created a new application using the technology of **ASP.NET I
 - dotnet sln add <file.csproj>
 - dotnet add <file.csproj> reference <file.csproj>
 
-### For execute the project
+### To execute the project
 
 - dotnet build
 - dotnet watch run --project <file.csproj>
 
-### For migrations with Code First
+### For Code First migrations
 
 - dotnet ef migrations add <name-new-migration> --project <path-name-project>
 - dotnet ef migrations remove --project <path-name-project>
@@ -40,3 +40,7 @@ In this project, I created a new application using the technology of **ASP.NET I
 
 - https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
 - https://learn.microsoft.com/es-es/aspnet/core/security/authentication/identity-enable-qrcodes?view=aspnetcore-8.0
+
+## To Publish the project
+
+- dotnet publish -o Publish

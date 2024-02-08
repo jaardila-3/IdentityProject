@@ -119,10 +119,8 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         try
         {
             var lockUserResult = await _accountIdentityManager.LockAndUnlockUserAsync(id, endDate);
-            if (lockUserResult.Succeeded)
-                TempData["Success"] = "Usuario bloqueado correctamente";
-            else
-                TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
+            if (lockUserResult.Succeeded) TempData["Success"] = "Usuario bloqueado correctamente";
+            else TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -141,14 +139,34 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
         try
         {
             var lockUserResult = await _accountIdentityManager.LockAndUnlockUserAsync(id);
-            if (lockUserResult.Succeeded)
-                TempData["Success"] = "Usuario desbloqueado correctamente";
-            else
-                TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
+            if (lockUserResult.Succeeded) TempData["Success"] = "Usuario desbloqueado correctamente";
+            else TempData["Error"] = lockUserResult.Errors.FirstOrDefault();
         }
         catch (Exception ex)
         {
             _errorController.LogException(ex, nameof(Unlock));
+            throw;
+        }
+        return RedirectToAction(nameof(Index));
+    }
+    #endregion
+
+    #region delete user
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> Delete(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        try
+        {
+            var deleteUserResult = await _accountIdentityManager.DeleteUserAsync(id);
+            if (deleteUserResult.Succeeded) TempData["Success"] = "Usuario eliminado correctamente";
+            else TempData["Error"] = deleteUserResult.Errors.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(Delete));
             throw;
         }
         return RedirectToAction(nameof(Index));

@@ -15,6 +15,7 @@ public interface IAccountIdentityManager
     #region Users
     Task<ResultDto> UpdateUserAsync(UserDto userDto);
     Task<ResultDto> LockAndUnlockUserAsync(string id, DateTimeOffset? endDate = null);
+    Task<ResultDto> DeleteUserAsync(string id);
     #endregion
 
     #region SignIn
