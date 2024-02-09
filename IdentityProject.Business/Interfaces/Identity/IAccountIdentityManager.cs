@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using IdentityProject.Common.Dto;
-using Microsoft.AspNetCore.Identity;
 
 namespace IdentityProject.Business.Interfaces.Identity;
 
@@ -35,7 +34,7 @@ public interface IAccountIdentityManager
     #endregion    
 
     #region Two Factor Authentication
-    Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal User);
+    Task<(string email, string token)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal User);
     Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode);
     Task<bool> DisableTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim);
     Task<bool> IsTwoFactorEnabled(ClaimsPrincipal principal);

@@ -60,11 +60,11 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             var viewModel = user.ToViewModel();
 
             var userRole = await _rolesService.GetUserRolesByUserIdAsync(id);
-            if (userRole is null) return NotFound("No se encontraron roles asignados al usuario.");
+            if (userRole is null) return BadRequest("No se encontraron roles asignados al usuario.");
             viewModel.RoleId = userRole.RoleId;
 
             var role = await _rolesService.GetRoleByIdAsync(userRole.RoleId!);
-            if (role is null) return NotFound("No existe el rol.");
+            if (role is null) return BadRequest("No existe el rol.");
             viewModel.RoleName = role.Name;
 
             var roles = await _rolesService.GetListRolesAsync();
@@ -177,9 +177,9 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     [HttpGet]
     public async Task<IActionResult> EditProfile(string id)
     {
+        if (string.IsNullOrEmpty(id)) return NotFound();
         try
         {
-            if (string.IsNullOrEmpty(id)) return NotFound();
             var userDto = await _userService.FindUserByIdAsync(id);
             if (userDto is null) return NotFound();
             var viewModel = userDto!.ToViewModel();

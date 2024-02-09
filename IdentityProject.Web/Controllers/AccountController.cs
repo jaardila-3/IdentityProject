@@ -134,7 +134,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token)) return NotFound();
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token)) return BadRequest("La confirmación de correo electrónico requiere un ID de usuario y un token válidos. Verifique la URL y vuelva a intentarlo.");
         bool isConfirmEmail = false;
         try
         {
@@ -145,7 +145,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             _errorController.LogException(ex, nameof(ConfirmEmail));
             throw;
         }
-        return isConfirmEmail ? View() : NotFound();
+        return isConfirmEmail ? View() : StatusCode(500, "Error al confirmar el correo");
     }
     #endregion
 
@@ -255,7 +255,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ResetPassword(string code) => string.IsNullOrEmpty(code) ? NotFound() : View();
+    public IActionResult ResetPassword(string code) => string.IsNullOrEmpty(code) ? BadRequest("Se debe proporcionar un código para restablecer la contraseña.") : View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -337,8 +337,9 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     {
         try
         {
-            var (token, email) = await _accountIdentityManager.InitiateTwoFactorAuthenticationAsync(User);
-            if (string.IsNullOrEmpty(token) && string.IsNullOrEmpty(email)) return NotFound();
+            var (email, token) = await _accountIdentityManager.InitiateTwoFactorAuthenticationAsync(User);
+            if (string.IsNullOrEmpty(email)) return BadRequest("No se pudo obtener los datos de la cuenta del usuario.");
+            if (string.IsNullOrEmpty(token)) return BadRequest("No se pudo generar el token de autenticación.");
             // Create QR code
             string authenticatorUrlFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
             string authenticatorUrl = string.Format(authenticatorUrlFormat, _urlEncoder.Encode("IdentityProject"), _urlEncoder.Encode(email), token);

@@ -7,7 +7,6 @@ using IdentityProject.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace IdentityProject.Business.identity;
 
@@ -191,15 +190,20 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     #endregion
 
     #region Two Factor Authentication
-    public async Task<(string token, string email)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
+    public async Task<(string email, string token)> InitiateTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim)
     {
         if (UserClaim is null || !UserClaim.Identity!.IsAuthenticated) return (string.Empty, string.Empty);
 
-        var identityUser = await _userManager.GetUserAsync(UserClaim) ?? throw new UserNotFoundException("El usuario no existe");
+        var identityUser = await _userManager.GetUserAsync(UserClaim);
+        if (identityUser is null) return (string.Empty, string.Empty);
+
         var resetAuthenticatorKeyResult = await _userManager.ResetAuthenticatorKeyAsync(identityUser);
-        if (!resetAuthenticatorKeyResult.Succeeded) throw new AuthenticationFailedException("No se pudo restablecer la clave de autenticación");
-        string token = await _userManager.GetAuthenticatorKeyAsync(identityUser) ?? throw new AuthenticationFailedException("No se pudo obtener la clave de autenticación");
-        return (token, identityUser.Email!);
+        if (resetAuthenticatorKeyResult is null || !resetAuthenticatorKeyResult.Succeeded) return (identityUser.Email!, string.Empty);
+
+        string? token = await _userManager.GetAuthenticatorKeyAsync(identityUser);
+        if (token is null) return (identityUser.Email!, string.Empty);
+
+        return (identityUser.Email!, token);
     }
 
     public async Task<bool> ConfirmTwoFactorAuthenticationAsync(ClaimsPrincipal UserClaim, string authenticatorCode)
@@ -244,7 +248,6 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
 
     public async Task<bool> IsTwoFactorEnabled(ClaimsPrincipal UserClaim)
     {
-        //in this method, don't check if the user is already logged in
         bool isTwoFactorEnabled = false;
         var identityUser = await _userManager.GetUserAsync(UserClaim);
         if (identityUser is not null) isTwoFactorEnabled = identityUser.TwoFactorEnabled;
