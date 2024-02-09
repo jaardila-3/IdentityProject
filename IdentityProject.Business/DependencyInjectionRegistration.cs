@@ -34,6 +34,8 @@ public static class DependencyInjectionRegistration
             // User settings.
             options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
             options.User.RequireUniqueEmail = true;
+            //SignIn settings
+            //options.SignIn.RequireConfirmedEmail = true;
         });
 
         //add IoC

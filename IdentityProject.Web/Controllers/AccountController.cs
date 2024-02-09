@@ -178,22 +178,13 @@ public class AccountController(IErrorController errorController, IAccountIdentit
                 _errorController.LogException(ex, nameof(Login));
                 throw;
             }
-
-            if (signInResultDto.Succeeded)
-                return LocalRedirect(returnUrl);
-
-            else if (signInResultDto.IsLockedOut || signInResultDto.IsNotAllowed)
-                return View("AccountLocked");
-
             #region Two Factor Authentication
-            else if (signInResultDto.RequiresTwoFactor)
-                return RedirectToAction(nameof(VerifyAuthenticatorCode), new { returnUrl, viewModel.RememberMe });
+            if (signInResultDto.RequiresTwoFactor) return RedirectToAction(nameof(VerifyAuthenticatorCode), new { returnUrl, viewModel.RememberMe });
             #endregion
-            else
-            {
-                ModelState.AddModelError(string.Empty, "Acceso inválido.");
-                return View(viewModel);
-            }
+            if (signInResultDto.Succeeded) return LocalRedirect(returnUrl);
+            if (signInResultDto.IsLockedOut) return View("AccountLocked");
+            if (signInResultDto.IsNotAllowed) ModelState.AddModelError(string.Empty, "Acceso inválido. Por favor, confirme su cuenta si aún no lo ha hecho.");
+            else ModelState.AddModelError(string.Empty, "Acceso inválido.");
         }
         return View(viewModel);
     }
@@ -417,9 +408,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
         viewModel.ReturnUrl ??= Url.Content("~/");
         ResultDto signInResultDto;
 
-        if (!ModelState.IsValid)
-            return View(viewModel);
-
+        if (!ModelState.IsValid) return View(viewModel);
         try
         {
             signInResultDto = await _accountIdentityManager.TwoFactorAuthenticatorSignInAsync(viewModel.Code!, viewModel.RememberMe, false);
@@ -430,15 +419,10 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             throw;
         }
 
-        if (signInResultDto.Succeeded)
-            return LocalRedirect(viewModel.ReturnUrl);
-
-        else if (signInResultDto.IsLockedOut || signInResultDto.IsNotAllowed)
-            return View("AccountLocked");
-
-        else
-            ModelState.AddModelError(string.Empty, "El código de verificación no es válido o ha expirado.");
-
+        if (signInResultDto.Succeeded) return LocalRedirect(viewModel.ReturnUrl);
+        if (signInResultDto.IsLockedOut) return View("AccountLocked");
+        if (signInResultDto.IsNotAllowed) ModelState.AddModelError(string.Empty, "Acceso inválido. Por favor, confirme su cuenta si aún no lo ha hecho.");
+        else ModelState.AddModelError(string.Empty, "El código de verificación no es válido o ha expirado.");
         return View(viewModel);
     }
 
