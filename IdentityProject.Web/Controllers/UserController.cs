@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using IdentityProject.Business.Interfaces.Identity;
 using IdentityProject.Business.Interfaces.Services.Roles;
 using IdentityProject.Business.Interfaces.Services.Users;
 using IdentityProject.Common.Enums;
+using IdentityProject.Web.Claims;
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Models;
 using IdentityProject.Web.Models.MapperExtensions;
@@ -104,6 +106,61 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
             throw;
         }
         viewModel.RoleId = oldRoleId;
+        return View(viewModel);
+    }
+    #endregion
+
+    #region Claims
+    [HttpGet]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> ManageUserClaims(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return NotFound();
+        var viewModel = new UserClaimsViewModel() { UserId = id };
+        try
+        {
+            var userClaims = await _accountIdentityManager.GetRemoveOrAssignUserClaimsByIdAsync(id);
+            foreach (Claim item in ClaimsManager.ClaimsCollection)
+            {
+                ClaimApp claimApp = new() { ClaimType = item.Type };
+                if (userClaims.Any(c => c.Type == item.Type)) claimApp.Selected = true;
+                viewModel.Claims.Add(claimApp);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorController.LogException(ex, nameof(ManageUserClaims));
+            throw;
+        }
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    public async Task<IActionResult> ManageUserClaims(UserClaimsViewModel viewModel)
+    {
+        if (ModelState.IsValid)
+        {
+            bool removeClaims = true;
+            var assignClaimsSelected = viewModel.Claims.Where(c => c.Selected).Select(c => new Claim(c.ClaimType!, c.Selected.ToString()));
+            var noPermissionsSelected = viewModel.Claims.All(c => !c.Selected); // In case the user did not select any permissions 
+            try
+            {
+                var userClaims = await _accountIdentityManager.GetRemoveOrAssignUserClaimsByIdAsync(viewModel.UserId!, removeClaims, assignClaimsSelected);
+                if (userClaims.Any() || noPermissionsSelected)
+                {
+                    TempData["Success"] = "permisos actualizados correctamente";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorController.LogException(ex, nameof(ManageUserClaims));
+                throw;
+            }
+            ModelState.AddModelError(string.Empty, "No se actualizaron los permisos, vuelve a intentarlo.");
+        }
         return View(viewModel);
     }
     #endregion

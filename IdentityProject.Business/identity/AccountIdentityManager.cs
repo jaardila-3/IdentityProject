@@ -100,6 +100,25 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         if (identityResult is null) return ResultDto.Failure(["No se pudo eliminar el usuario"]);
         return identityResult.ToApplicationResult();
     }
+
+    public async Task<IList<Claim>> GetRemoveOrAssignUserClaimsByIdAsync(string id, bool removeClaims = false, IEnumerable<Claim>? assignClaims = null)
+    {
+        var identityUser = await _userManager.FindByIdAsync(id) ?? throw new UserNotFoundException("El usuario no existe");
+        var userClaims = await _userManager.GetClaimsAsync(identityUser) ?? [];
+        if (removeClaims && userClaims.Any())
+        {
+            var identityResult = await _userManager.RemoveClaimsAsync(identityUser, userClaims);
+            if (identityResult is null || !identityResult.Succeeded) throw new IdentityUserManagerException("No se pudo remover los permisos del usuario");
+            userClaims = [];
+        }
+        if (assignClaims is not null && assignClaims.Any())
+        {
+            var identityResult = await _userManager.AddClaimsAsync(identityUser, assignClaims);
+            if (identityResult is null || !identityResult.Succeeded) throw new IdentityUserManagerException("No se pudo asignar los permisos del usuario");
+            userClaims = await _userManager.GetClaimsAsync(identityUser) ?? [];
+        }
+        return userClaims;
+    }
     #endregion
 
     #region SignIn    
@@ -115,7 +134,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
     public async Task GetTwoFactorAuthenticationUserAsync()
     {
         if (await _signInManager.GetTwoFactorAuthenticationUserAsync() is null)
-            throw new AuthenticationFailedException("El usuario no tiene dos factores de autenticación activado");
+            throw new IdentitySignInManagerException("El usuario no tiene dos factores de autenticación activado");
     }
 
     public async Task<ResultDto> TwoFactorAuthenticatorSignInAsync(string code, bool isPersistent, bool rememberClient)
@@ -262,7 +281,7 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         if (identityUser is null) return (string.Empty, string.Empty);
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser)
-            ?? throw new TokenGenerationFailedException("No se pudo generar el token de restablecimiento de la contraseña");
+            ?? throw new IdentityUserManagerException("No se pudo generar el token de restablecimiento de la contraseña");
 
         return (identityUser.Id, token);
     }

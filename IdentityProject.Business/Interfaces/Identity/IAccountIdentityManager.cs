@@ -15,6 +15,7 @@ public interface IAccountIdentityManager
     Task<ResultDto> UpdateUserAsync(UserDto userDto);
     Task<ResultDto> LockAndUnlockUserAsync(string id, DateTimeOffset? endDate = null);
     Task<ResultDto> DeleteUserAsync(string id);
+    Task<IList<Claim>> GetRemoveOrAssignUserClaimsByIdAsync(string id, bool removeClaims = false, IEnumerable<Claim>? assignClaims = null);
     #endregion
 
     #region SignIn

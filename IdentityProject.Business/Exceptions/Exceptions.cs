@@ -1,4 +1,4 @@
 namespace IdentityProject.Business.Exceptions;
-public class AuthenticationFailedException(string message) : Exception(message) { }
+public class IdentitySignInManagerException(string message) : Exception(message) { }
 public class UserNotFoundException(string message) : Exception(message) { }
-public class TokenGenerationFailedException(string message) : Exception(message) { }
+public class IdentityUserManagerException(string message) : Exception(message) { }

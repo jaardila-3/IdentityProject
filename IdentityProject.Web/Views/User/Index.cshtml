@@ -46,6 +46,9 @@
                                                     <a class="btn btn-primary" asp-controller="User" asp-action="Edit"
                                                         asp-route-id="@item.Id" style="width: 90px;">Editar</a>
 
+                                                    <a class="btn btn-success" asp-controller="User" asp-action="ManageUserClaims"
+                                                        asp-route-id="@item.Id" style="width: 90px;">Permisos</a>
+
                                                     @if (item.LockoutEnd is null || item.LockoutEnd < DateTime.UtcNow)
                                                     {
                                                         <button type="submit" class="btn btn-secondary text-white"
