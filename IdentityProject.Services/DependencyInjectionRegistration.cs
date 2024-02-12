@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityProject.Services;
 public static class DependencyInjectionRegistration
 {
-    public static IServiceCollection AddServices(this IServiceCollection services)
+    public static IServiceCollection AddExternalServices(this IServiceCollection services)
     {
         //add IoC
         //Transient

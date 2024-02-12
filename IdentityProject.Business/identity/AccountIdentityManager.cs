@@ -170,8 +170,8 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
 
     public async Task SetupRolesAsync()
     {
-        await CreateRoleAsync(nameof(RoleType.Usuario_Registrado));
-        await CreateRoleAsync(nameof(RoleType.Admin));
+        await CreateRoleAsync(RoleTypeString.RegisteredUser);
+        await CreateRoleAsync(RoleTypeString.Administrator);
     }
 
     public async Task<ResultDto> DeleteRoleAsync(string id)

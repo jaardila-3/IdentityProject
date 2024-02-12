@@ -6,15 +6,22 @@ using IdentityProject.Business.Interfaces.Services.Users;
 using IdentityProject.Business.Services.Email;
 using IdentityProject.Business.Services.Roles;
 using IdentityProject.Business.Services.Users;
+using IdentityProject.Services;
+using IdentityProject.DataAccess;
 using IdentityProject.DataAccess.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IdentityProject.Business;
 public static class DependencyInjectionRegistration
 {
-    public static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    public static IServiceCollection AddBusinessServices(this IServiceCollection services, IConfiguration configuration)
     {
+        //Add services from other layers
+        services.AddDataAccessServices(configuration);
+        services.AddExternalServices();
+
         //add identity service
         services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
         //configuration options for identity

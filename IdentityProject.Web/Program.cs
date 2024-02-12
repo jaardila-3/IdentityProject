@@ -1,15 +1,11 @@
 using IdentityProject.Web.Interfaces.Controllers;
 using IdentityProject.Web.Controllers;
 using IdentityProject.Business;
-using IdentityProject.Services;
-using IdentityProject.DataAccess;
 using IdentityProject.Common.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDataAccessServices(builder.Configuration);
-builder.Services.AddBusinessServices();
-builder.Services.AddServices();
+builder.Services.AddBusinessServices(builder.Configuration);
 
 //configuration application cookie
 builder.Services.ConfigureApplicationCookie(options =>
@@ -32,13 +28,13 @@ builder.Services.AddAuthorization(options =>
 
     //https://learn.microsoft.com/es-es/aspnet/core/security/authorization/policies?view=aspnetcore-8.0
     //[Authorize(Policy = "SuperUser")]
-    options.AddPolicy("SuperUser", policy => policy.RequireUserName("jorge.ardilar").RequireRole(nameof(RoleType.Admin)));
+    options.AddPolicy("SuperUser", policy => policy.RequireUserName("jorge.ardilar").RequireRole(RoleTypeString.Administrator));
 
     //https://learn.microsoft.com/es-es/aspnet/core/security/authorization/claims?view=aspnetcore-8.0
     //[Authorize(Policy = "AdminCreate")]
-    options.AddPolicy("AdminCreate", policy => policy.RequireRole(nameof(RoleType.Admin)).RequireClaim("Create", "True"));
+    options.AddPolicy("AdminCreate", policy => policy.RequireRole(RoleTypeString.Administrator).RequireClaim("Create", "True"));
     //[Authorize(Policy = "AdminEditAndDelete")]
-    options.AddPolicy("AdminEditAndDelete", policy => policy.RequireRole(nameof(RoleType.Admin)).RequireClaim("Edit", "True").RequireClaim("Delete", "True"));
+    options.AddPolicy("AdminEditAndDelete", policy => policy.RequireRole(RoleTypeString.Administrator).RequireClaim("Edit", "True").RequireClaim("Delete", "True"));
 });
 
 //add IoC

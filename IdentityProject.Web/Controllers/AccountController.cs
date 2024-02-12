@@ -49,7 +49,7 @@ public class AccountController(IErrorController errorController, IAccountIdentit
             {
                 viewModel.State = true;
                 var userToCreateDto = viewModel.ToDto();
-                var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!, nameof(RoleType.Usuario_Registrado));
+                var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!, RoleTypeString.RegisteredUser);
 
                 if (resultDtoUsercreated.Succeeded)
                 {
@@ -91,41 +91,35 @@ public class AccountController(IErrorController errorController, IAccountIdentit
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RegisterAdmin(RegisterViewModel viewModel)
     {
-        if (!ModelState.IsValid)
-        {
-            viewModel.Roles = await GetRoleItemsAsync();
-            return View(viewModel);
-        }
-        if (string.IsNullOrEmpty(viewModel.SelectedRole))
-        {
-            ModelState.AddModelError(string.Empty, "Debe seleccionar un rol");
-            viewModel.Roles = await GetRoleItemsAsync();
-            return View(viewModel);
-        }
+        if (string.IsNullOrEmpty(viewModel.SelectedRole)) ModelState.AddModelError(nameof(viewModel.SelectedRole), "Debe seleccionar un rol");
 
-        try
+        if (ModelState.IsValid)
         {
-            viewModel.State = true;
-            var userToCreateDto = viewModel.ToDto();
-            var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!, viewModel.SelectedRole, false);
-
-            if (resultDtoUsercreated.Succeeded)
+            try
             {
-                if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                viewModel.State = true;
+                var userToCreateDto = viewModel.ToDto();
+                var (resultDtoUsercreated, userId) = await _accountIdentityManager.CreateUserAsync(userToCreateDto, viewModel.Password!, viewModel.SelectedRole!, false);
+
+                if (resultDtoUsercreated.Succeeded)
                 {
-                    TempData["Error"] = "No se pudo enviar el email de confirmación";
-                    Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
+                    if (!await SendEmailConfirmationRegisterAsync(userId, viewModel.Email!))
+                    {
+                        TempData["Error"] = "No se pudo enviar el email de confirmación";
+                        Console.Error.WriteLine("No se pudo enviar el email de confirmación por que no se genero el token.");
+                    }
+                    TempData["Success"] = "Usuario creado correctamente";
+                    return RedirectToAction(nameof(HomeController.Index), "Home");
                 }
-                TempData["Success"] = "Usuario creado correctamente";
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+                foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
             }
-            foreach (var error in resultDtoUsercreated.Errors) ModelState.AddModelError(string.Empty, error);
+            catch (Exception ex)
+            {
+                _errorController.LogException(ex, nameof(RegisterAdmin));
+                throw;
+            }
         }
-        catch (Exception ex)
-        {
-            _errorController.LogException(ex, nameof(RegisterAdmin));
-            throw;
-        }
+
         viewModel.Roles = await GetRoleItemsAsync();
         return View(viewModel);
     }
@@ -286,6 +280,21 @@ public class AccountController(IErrorController errorController, IAccountIdentit
 
     #region Helpers
     private async Task<List<SelectListItem>> GetRoleItemsAsync()
+    {
+        var roles = await _accountIdentityManager.GetRolesAsync() ?? [];
+        List<SelectListItem> roleItems = [];
+
+        foreach (var role in roles)
+        {
+            roleItems.Add(new SelectListItem()
+            {
+                Value = role,
+                Text = role
+            });
+        }
+        return roleItems;
+    }
+    private async Task<List<SelectListItem>> GetRoleItemsEnumAsync()
     {
         var roles = await _accountIdentityManager.GetRolesAsync() ?? [];
         List<SelectListItem> roleItems = [];

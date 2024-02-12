@@ -21,7 +21,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     private readonly IRolesService _rolesService = rolesService;
 
     [HttpGet]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Index()
     {
         List<UserViewModel>? viewModel = [];
@@ -51,7 +51,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     #region Edit User
     [HttpGet]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Edit(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();
@@ -82,7 +82,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Edit(UserViewModel viewModel, string oldRoleId)
     {
         try
@@ -112,7 +112,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     #region Claims
     [HttpGet]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> ManageUserClaims(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();
@@ -137,7 +137,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> ManageUserClaims(UserClaimsViewModel viewModel)
     {
         if (ModelState.IsValid)
@@ -168,7 +168,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     #region Lock and Unlock
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Lock(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();
@@ -189,7 +189,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Unlock(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();
@@ -211,7 +211,7 @@ public class UserController(IErrorController errorController, IAccountIdentityMa
     #region delete user
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = nameof(RoleType.Admin))]
+    [Authorize(Roles = RoleTypeString.Administrator)]
     public async Task<IActionResult> Delete(string id)
     {
         if (string.IsNullOrEmpty(id)) return NotFound();

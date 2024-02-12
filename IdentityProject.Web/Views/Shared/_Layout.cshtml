@@ -41,7 +41,7 @@
                             <a class="nav-link text-white" asp-area="" asp-controller="Home"
                                 asp-action="Privacy">Privacidad</a>
                         </li>
-                        @if (User.IsInRole(nameof(IdentityProject.Common.Enums.RoleType.Admin)))
+                        @if (User.IsInRole(IdentityProject.Common.Enums.RoleTypeString.Administrator))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-area="" asp-controller="User"

@@ -2,17 +2,17 @@ using System.ComponentModel;
 
 namespace IdentityProject.Common.Enums
 {
+    public static class RoleTypeString
+    {
+        public const string Administrator = "Administrador";
+        public const string RegisteredUser = "Usuario registrado";
+    }
+
     public enum RoleType
     {
         [Description("Administrador")]
-        Admin,
+        Administrator,
         [Description("Usuario registrado")]
-        Usuario_Registrado
-    }
-
-    public static class RoleTypeString
-    {
-        public static readonly string Admin = "Administrador";
-        public static readonly string Usuario_Registrado = "Usuario registrado";
+        RegisteredUser
     }
 }

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityProject.Web.Controllers;
-[Authorize(Roles = nameof(RoleType.Admin))]
+[Authorize(Roles = RoleTypeString.Administrator)]
 public class RolesController(IErrorController errorController, IRolesService rolesService, IAccountIdentityManager accountIdentityManager) : Controller
 {
     private readonly IErrorController _errorController = errorController;
