@@ -188,21 +188,29 @@ public class AccountIdentityManager(UserManager<IdentityUser> userManager, SignI
         return identityResult.ToApplicationResult();
     }
 
-    public async Task<ResultDto> RemoveUserRoleAndAssignNewRoleAsync(string userId, string oldRoleId, string newRoleId)
+    public async Task<ResultDto> AssignNewUserRoleAsync(string userId, string roleId)
     {
         var identityUser = await _userManager.FindByIdAsync(userId);
         if (identityUser is null) return ResultDto.Failure(["El usuario No existe en el sistema"]);
 
-        var identityOldRole = await _roleManager.FindByIdAsync(oldRoleId);
-        if (identityOldRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
+        var identityRole = await _roleManager.FindByIdAsync(roleId);
+        if (identityRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
 
-        var roleToRemoveResult = await _userManager.RemoveFromRoleAsync(identityUser, identityOldRole.Name!);
-        if (roleToRemoveResult is null || !roleToRemoveResult.Succeeded) return ResultDto.Failure(["No se pudo eliminar el rol del usuario"]);
-
-        var identityNewRole = await _roleManager.FindByIdAsync(newRoleId);
-        if (identityNewRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
-        var roleAdditionResult = await _userManager.AddToRoleAsync(identityUser, identityNewRole.Name!);
+        var roleAdditionResult = await _userManager.AddToRoleAsync(identityUser, identityRole.Name!);
         if (roleAdditionResult is null) return ResultDto.Failure(["No fue posible asignar el nuevo rol al usuario"]);
+
+        return roleAdditionResult.ToApplicationResult();
+    }
+    public async Task<ResultDto> RemoveUserRoleAsync(string userId, string roleId)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId);
+        if (identityUser is null) return ResultDto.Failure(["El usuario No existe en el sistema"]);
+
+        var identityRole = await _roleManager.FindByIdAsync(roleId);
+        if (identityRole is null) return ResultDto.Failure(["El rol No existe en el sistema"]);
+
+        var roleToRemoveResult = await _userManager.RemoveFromRoleAsync(identityUser, identityRole.Name!);
+        if (roleToRemoveResult is null) return ResultDto.Failure(["No se pudo eliminar el rol del usuario"]);
 
         return roleToRemoveResult.ToApplicationResult();
     }

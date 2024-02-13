@@ -10,5 +10,5 @@ public class RolesRepository(ApplicationDbContext context) : IRolesRepository
     public async Task<IdentityRole?> GetRoleByIdAsync(string id) => await context.Roles.FindAsync(id);
     public async Task<List<IdentityUserRole<string>>?> GetListUserRolesAsync() => await context.UserRoles.AsNoTracking().ToListAsync();
 
-    public async Task<IdentityUserRole<string>?> GetUserRolesByUserIdAsync(string userId) => await context.UserRoles.AsNoTracking().FirstOrDefaultAsync(ur => ur.UserId == userId);
+    public async Task<List<IdentityUserRole<string>>?> GetUserRolesByUserIdAsync(string userId) => await context.UserRoles.AsNoTracking().Where(ur => ur.UserId == userId).ToListAsync();
 }

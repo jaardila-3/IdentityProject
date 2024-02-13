@@ -1,0 +1,101 @@
+@model UserViewModel
+
+@{
+    ViewData["Title"] = "Asignar Roles";
+}
+
+<h1 class="text-center text-primary">Asignar Roles A Usuario</h1>
+
+<div class="row">
+    <div class="col-md-8 offset-2">
+        <form method="post" asp-controller="User" asp-action="AssignRoles">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <hr />
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" readonly class="form-control" />
+            </div>
+            <div class="form-group mb-4">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" readonly class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="RoleId"></label>
+                <select asp-for="RoleId" asp-items="@Model.RolesApp" class="form-control">
+                    <option disabled selected>--Seleccionar Rol--</option>
+                </select>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Asignar Rol</button>
+                <a asp-action="Index" class="text-dark ms-5" style="width:auto">Volver atrás</a>
+            </div>
+        </form>
+
+        <br />
+        <hr />
+
+        <div class="card border mt-5">
+            <div class="card-header">
+                <h3><strong>Lista de roles del usuarios</strong></h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    @if (Model.CurrentRoles?.Count() > 0)
+                    {
+                        <table class="table table-bordered table-hover nowrap" id="datatables" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>@Html.DisplayNameFor(u => u.CurrentRoles)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.CurrentRoles)
+                                {
+                                    <tr>
+                                        <td>@Html.DisplayFor(role => item.Name)</td>
+                                        <td>
+                                            <form asp-controller="User" asp-action="RemoveUserRole" asp-route-roleId="@item.Id"
+                                                asp-route-userId="@Model.Id">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger" style="width: 90px;"
+                                                    onclick="return confirm('¿Está seguro de borrar este registro?')">Eliminar</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>No hay registros</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    @if (TempData["Success"] is not null)
+    {
+        <script type="text/javascript">
+            toastr.success("@TempData["Success"]");
+        </script>
+    }
+    @if (TempData["Error"] is not null)
+    {
+        <script type="text/javascript">
+            toastr.error("@TempData["Error"]");
+        </script>
+    }
+}

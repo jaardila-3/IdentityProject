@@ -64,11 +64,11 @@ public record UserViewModel
 
     public bool State { get; set; }
 
-    [Display(Name = "Rol para el usuario")]
-    [StringLength(50, ErrorMessage = "El {0} debe tener entre {2} y {1} caracteres.", MinimumLength = 15)]
+    [Display(Name = "Roles para asignar al usuario")]
     public string? RoleId { get; set; }
-    public string? RoleName { get; set; }
-    public IEnumerable<SelectListItem>? Roles { get; set; }
+    public IEnumerable<SelectListItem>? RolesApp { get; set; }
 
+    [Display(Name = "Roles del usuario")]
+    public IEnumerable<RoleViewModel>? CurrentRoles { get; set; }
     public DateTimeOffset? LockoutEnd { get; set; } = null;
 }

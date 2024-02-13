@@ -25,7 +25,6 @@
                                     <th>@Html.DisplayNameFor(u => u.Email)</th>
                                     <th>@Html.DisplayNameFor(u => u.UserName)</th>
                                     <th>@Html.DisplayNameFor(u => u.PhoneNumber)</th>
-                                    <th>@Html.DisplayNameFor(u => u.RoleName)</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -37,7 +36,6 @@
                                         <td>@Html.DisplayFor(role => item.Email)</td>
                                         <td>@Html.DisplayFor(role => item.UserName)</td>
                                         <td>@Html.DisplayFor(role => item.PhoneNumber)</td>
-                                        <td>@Html.DisplayFor(role => item.RoleName)</td>
                                         <td>
                                             <div class="btn-group text-center" style="gap: 10px;">
                                                 <form asp-controller="User" asp-action="Delete" asp-route-id="@item.Id">
@@ -45,6 +43,9 @@
 
                                                     <a class="btn btn-primary" asp-controller="User" asp-action="Edit"
                                                         asp-route-id="@item.Id" style="width: 90px;">Editar</a>
+
+                                                    <a class="btn btn-info" asp-controller="User" asp-action="AssignRoles"
+                                                        asp-route-id="@item.Id" style="width: 90px;">Roles</a>
 
                                                     <a class="btn btn-success" asp-controller="User" asp-action="ManageUserClaims"
                                                         asp-route-id="@item.Id" style="width: 90px;">Permisos</a>

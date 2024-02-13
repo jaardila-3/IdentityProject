@@ -1,39 +1,104 @@
 @model UserViewModel
 
 @{
-    ViewData["Title"] = "Asignar Roles";
+    ViewData["Title"] = "Editar datos";
 }
 
-<h1 class="text-center text-primary">Asignar Roles A Usuario</h1>
-
-<div class="row">
-    <div class="col-md-8 offset-2">
-        <form method="post" asp-controller="User" asp-action="Edit">
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title text-center">Editar datos del usuario</h3>
+        <form asp-controller="User" asp-action="Edit" method="post">
+            <div class="text-danger" asp-validation-summary="All"></div>
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
-            <input type="hidden" name="oldRoleId" value="@Model.RoleId" />
 
-            <hr />
-            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="row mt-4">
+                <div class="col-sm-6">
 
-            <div class="form-group mb-4">
-                <label asp-for="Email"></label>
-                <input asp-for="Email" readonly class="form-control" />
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Ingresa el nombre">
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Email"></label>
+                        <input asp-for="Email" class="form-control" placeholder="Ingresa un correo electrónico" disabled>
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="UserName"></label>
+                        <input asp-for="UserName" class="form-control" placeholder="Ingresa el nombre de usuario" disabled>
+                        <span asp-validation-for="UserName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Url"></label>
+                        <input asp-for="Url" class="form-control" placeholder="Ingresa la url del sitio web">
+                        <span asp-validation-for="Url" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="CountryCode"></label>
+                        <input asp-for="CountryCode" class="form-control" placeholder="Ingresa el código del país">
+                        <span asp-validation-for="CountryCode" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="col-sm-6">
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="PhoneNumber"></label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="Ingresa el número de teléfono">
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Country"></label>
+                        <input asp-for="Country" class="form-control" placeholder="Ingresa el país de residencia">
+                        <span asp-validation-for="Country" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="City"></label>
+                        <input asp-for="City" class="form-control" placeholder="Ingresa la ciudad de residencia">
+                        <span asp-validation-for="City" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Address"></label>
+                        <input asp-for="Address" class="form-control" placeholder="Ingresa la dirección de residencia">
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="col-md-4" asp-for="Birthdate"></label>
+                        <input type="text" asp-for="Birthdate" class="form-control" id="datepicker"
+                            placeholder="Ejemplo: 25/10/1990">
+                        <span asp-validation-for="Birthdate" class="text-danger"></span>
+                    </div>
+
+                </div>
+
             </div>
-            <div class="form-group mb-4">
-                <label asp-for="Name"></label>
-                <input asp-for="Name" readonly class="form-control" />
+
+            <div class="row">
+                <div class="col-sm-10 offset-2">
+                    <button type="submit" class="btn btn-primary w-75 btn-lg">Editar <i
+                            class="bi bi-arrow-right-circle-fill"></i></button>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="RoleId"></label>
-                <select asp-for="RoleId" asp-items="@Model.Roles" class="form-control">
-                    <option disabled selected>--Seleccionar Rol--</option>
-                </select>
-            </div>
-            <div class="form-group mt-4">
-                <button type="submit" class="btn btn-primary">Editar Usuario</button>
-                <a asp-action="Index" class="text-dark ms-5" style="width:auto">Volver atrás</a>
-            </div>
+
         </form>
     </div>
 </div>
+
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -6,5 +6,5 @@ public interface IRolesRepository
     Task<List<IdentityRole>?> GetListRolesAsync();
     Task<IdentityRole?> GetRoleByIdAsync(string id);
     Task<List<IdentityUserRole<string>>?> GetListUserRolesAsync();
-    Task<IdentityUserRole<string>?> GetUserRolesByUserIdAsync(string userId);
+    Task<List<IdentityUserRole<string>>?> GetUserRolesByUserIdAsync(string userId);
 }
